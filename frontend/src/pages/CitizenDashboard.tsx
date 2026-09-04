@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MapPin, Clock, CheckCircle2, AlertCircle, TrendingUp, Eye, MessageSquare, Users, Brain, ArrowLeft } from "lucide-react";
 import type { Page } from "../types";
+import { useAuth } from "../auth/AuthContext";
 
 interface Props {
   onNavigate: (page: Page) => void;
@@ -90,6 +91,7 @@ const timeline = [
 ];
 
 export default function CitizenDashboard({ onNavigate, onBack }: Props) {
+  const { user } = useAuth();
   const [filter, setFilter] = useState<"all" | "in-progress" | "resolved">("all");
 
   const filtered = filter === "all" ? challenges : filter === "resolved" ? challenges.filter((c) => c.status === "Resolved") : challenges.filter((c) => c.status !== "Resolved" && c.status !== "Submitted");
@@ -112,9 +114,11 @@ export default function CitizenDashboard({ onNavigate, onBack }: Props) {
             <div>
               <p className="text-gray-500 text-xs font-bold tracking-widest mb-1">GOOD MORNING</p>
               <h1 className="text-3xl md:text-4xl font-extrabold" style={{ color: "#071A33", fontFamily: "var(--font-display)" }}>
-                Sushmitha <span className="text-2xl">👋</span>
+                {user?.name || (user?.profile as Record<string, any>)?.full_name || "Citizen"} <span className="text-2xl">👋</span>
               </h1>
-              <p className="text-gray-500 text-sm mt-1">Srivilliputhur, Tamil Nadu · Member since Jan 2026</p>
+              <p className="text-gray-500 text-sm mt-1">
+                {user?.district && user?.state ? `${user.district}, ${user.state} · ` : user?.state ? `${user.state} · ` : ""}Tracking local challenges & community outcomes
+              </p>
             </div>
           </div>
 

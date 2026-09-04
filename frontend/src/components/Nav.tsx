@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Menu, X, Zap, Bell, User, ChevronDown, ArrowLeft } from "lucide-react";
 import type { Page, Role } from "../types";
+import { useAuth } from "../auth/AuthContext";
 
 interface NavProps {
   currentPage: Page;
@@ -28,6 +29,7 @@ const universityLinks = [
 ];
 
 export default function Nav({ currentPage, role, onNavigate, onBack, canGoBack }: NavProps) {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
 
   const links =
@@ -113,7 +115,7 @@ export default function Nav({ currentPage, role, onNavigate, onBack, canGoBack }
             <User size={14} className="text-white" />
           </div>
           <span className="text-sm font-medium hidden md:block" style={{ color: "#071A33" }}>
-            {role === "citizen" ? "Sushmitha" : role === "government" ? "Officer Rajan" : role === "university" ? "Dr. Anjali Kumar" : "Industry User"}
+            {user?.name || (user?.profile as Record<string, any>)?.full_name || (user?.profile as Record<string, any>)?.officer_name || (user?.profile as Record<string, any>)?.contact_person || (role ? `${role.charAt(0).toUpperCase() + role.slice(1)} User` : "User")}
           </span>
           <ChevronDown size={14} className="text-gray-400" />
         </button>

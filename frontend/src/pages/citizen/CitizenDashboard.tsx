@@ -32,12 +32,20 @@ export default function CitizenDashboard() {
 
   useEffect(() => {
     async function loadData() {
-      const data = await challengeService.getAllChallenges();
-      setChallenges(data);
-      setLoading(false);
+      try {
+        setLoading(true);
+        const data = await challengeService.getMyChallenges();
+        setChallenges(data);
+      } catch (err) {
+        console.error("Failed to load citizen challenges:", err);
+        setChallenges([]);
+      } finally {
+        setLoading(false);
+      }
     }
     loadData();
   }, []);
+
 
   const totalSubmitted = challenges.length;
   const inProgressCount = challenges.filter(
@@ -66,10 +74,14 @@ export default function CitizenDashboard() {
                 className="text-3xl md:text-4xl font-extrabold text-[#071A33]"
                 style={{ fontFamily: "var(--font-display)" }}
               >
-                Welcome back, {user?.name || "Citizen"} 👋
+                Welcome back, {user?.name || (user?.profile as Record<string, any>)?.full_name || "Citizen"} 👋
               </h1>
               <p className="text-gray-500 text-sm mt-1">
-                {user?.district || "Virudhunagar"}, {user?.state || "Tamil Nadu"} · Tracking local challenges & community outcomes
+                {user?.district && user?.state
+                  ? `${user.district}, ${user.state} · `
+                  : user?.state
+                  ? `${user.state} · `
+                  : ""}Tracking local challenges & community outcomes
               </p>
             </div>
 
@@ -148,104 +160,129 @@ export default function CitizenDashboard() {
               </div>
             </div>
 
-            <div className="space-y-4">
-              {filtered.map((c) => (
-                <div
-                  key={c.id}
-                  onClick={() => navigate(`/citizen/challenges/${c.id}`)}
-                  className="rounded-2xl p-5 hover:shadow-lg transition-all duration-300 cursor-pointer group bg-white border border-gray-200/90"
-                >
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
-                          {c.category}
-                        </span>
-                        <PriorityBadge priority={c.priority} />
-                        <StatusBadge status={c.status} />
-                      </div>
-                      <h3 className="font-bold text-base text-[#071A33] group-hover:text-blue-600 transition-colors">
-                        {c.title}
-                      </h3>
-                    </div>
+            {loading ? (
+              <div className="py-16 flex flex-col items-center justify-center text-gray-500 rounded-2xl bg-slate-50/50 border border-gray-100">
 
-                    <div className="text-right flex-shrink-0">
-                      <div
-                        className="text-2xl font-extrabold"
-                        style={{
-                          color: c.priorityScore >= 80 ? "#EF4444" : "#F59E0B",
-                          fontFamily: "var(--font-display)",
-                        }}
-                      >
-                        {c.priorityScore}
-                      </div>
-                      <div className="text-[11px] text-gray-400">AI Priority</div>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-gray-600 line-clamp-2 mb-3 leading-relaxed">
-                    {c.description}
-                  </p>
-
-                  <div className="flex flex-wrap gap-4 text-xs text-gray-500 mb-3">
-                    <span className="flex items-center gap-1">
-                      <MapPin size={13} className="text-gray-400" />
-                      {c.location}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users size={13} className="text-gray-400" />
-                      {c.similarReports} similar reports
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <TrendingUp size={13} className="text-emerald-500" />
-                      {c.affectedPeople} affected
-                    </span>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="mb-3">
-                    <div className="flex justify-between text-xs text-gray-400 mb-1">
-                      <span className="font-medium text-gray-700">{c.stage}</span>
-                      <span className="font-semibold text-gray-700">{c.progress}%</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-700"
-                        style={{
-                          width: `${c.progress}%`,
-                          background:
-                            c.progress === 100
-                              ? "#10B981"
-                              : "linear-gradient(90deg, #0B63F6, #00C2FF)",
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {c.assignedUniversity ? (
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs text-purple-700 font-medium">
-                      <div className="flex items-center gap-1.5">
-                        <Brain size={13} />
-                        <span>Assigned to {c.assignedUniversity}</span>
-                      </div>
-                      <span className="text-blue-600 font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                        View Details <ArrowRight size={13} />
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs text-gray-500">
-                      <span>Matching with accredited university research labs...</span>
-                      <span className="text-blue-600 font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
-                        Track <ArrowRight size={13} />
-                      </span>
-                    </div>
-                  )}
+                <div className="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin mb-3" />
+                <p className="text-sm font-medium">Loading your submitted challenges...</p>
+              </div>
+            ) : filtered.length === 0 ? (
+              <div className="rounded-2xl p-10 bg-slate-50 border border-gray-200 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3">
+                  <AlertCircle size={24} />
                 </div>
-              ))}
-            </div>
+                <h3 className="text-base font-bold text-[#071A33] mb-1">
+                  No challenges reported yet.
+                </h3>
+                <p className="text-xs text-gray-500 mb-6 max-w-sm mx-auto">
+                  Report societal challenges and infrastructure issues in your community to initiate real civic change.
+                </p>
+                <Link
+                  to="/citizen/report"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-xs cursor-pointer"
+                >
+                  <PlusCircle size={16} /> Report a Challenge
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filtered.map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => navigate(`/citizen/challenges/${c.id}`)}
+                    className="rounded-2xl p-5 hover:shadow-lg transition-all duration-300 cursor-pointer group bg-white border border-gray-200/90"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100">
+                            {c.category}
+                          </span>
+                          <PriorityBadge priority={c.priority} />
+                          <StatusBadge status={c.status} />
+                        </div>
+                        <h3 className="font-bold text-base text-[#071A33] group-hover:text-blue-600 transition-colors">
+                          {c.title}
+                        </h3>
+                      </div>
+
+                      <div className="text-right flex-shrink-0">
+                        <div
+                          className="text-2xl font-extrabold"
+                          style={{
+                            color: c.priorityScore >= 80 ? "#EF4444" : "#0B63F6",
+                            fontFamily: "var(--font-display)",
+                          }}
+                        >
+                          {c.priorityScore > 0 ? c.priorityScore : "--"}
+                        </div>
+                        <div className="text-[11px] text-gray-400">AI Priority</div>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-gray-600 line-clamp-2 mb-3 leading-relaxed">
+                      {c.description}
+                    </p>
+
+                    <div className="flex flex-wrap gap-4 text-xs text-gray-500 mb-3">
+                      <span className="flex items-center gap-1">
+                        <MapPin size={13} className="text-gray-400" />
+                        {c.location || "Location not specified"}
+                      </span>
+                      {c.submittedDate && (
+                        <span className="flex items-center gap-1">
+                          <Clock size={13} className="text-gray-400" />
+                          Submitted {c.submittedDate}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="mb-3">
+                      <div className="flex justify-between text-xs text-gray-400 mb-1">
+                        <span className="font-medium text-gray-700">{c.stage}</span>
+                        <span className="font-semibold text-gray-700">{c.progress}%</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{
+                            width: `${c.progress}%`,
+                            background:
+                              c.progress === 100
+                                ? "#10B981"
+                                : "linear-gradient(90deg, #0B63F6, #00C2FF)",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {c.assignedUniversity ? (
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs text-purple-700 font-medium">
+                        <div className="flex items-center gap-1.5">
+                          <Brain size={13} />
+                          <span>Assigned to {c.assignedUniversity}</span>
+                        </div>
+                        <span className="text-blue-600 font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                          View Details <ArrowRight size={13} />
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-xs text-gray-500">
+                        <span>Submitted & awaiting review...</span>
+                        <span className="text-blue-600 font-semibold group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                          Track <ArrowRight size={13} />
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right Column: Activity & Impact Preview */}
+
           <div className="space-y-6">
             <ActivityTimeline
               items={mockActivities.filter((a) => a.role === "citizen" || a.role === "university")}

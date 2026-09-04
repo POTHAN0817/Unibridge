@@ -42,7 +42,7 @@ export default function IndustryDashboard() {
   return (
     <div className="min-h-screen bg-white">
       <DashboardHeader
-        badge={user?.organization || "CoolTech India Pvt. Ltd. · Corporate Innovation"}
+        badge={user?.organization || (user?.profile as Record<string, any>)?.company_name || "CORPORATE INNOVATION PARTNER"}
         badgeColor="#F59E0B"
         title="Industry Partner Innovation Portal"
         subtitle="Empowering university engineering labs through technical mentorship, IoT hardware grants, and pilot scale-up."

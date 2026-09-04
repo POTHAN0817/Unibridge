@@ -1,112 +1,230 @@
-import { mockUsers } from "../data/mock/users";
-import { UserProfile, UserRole } from "../types";
-import { LoginCredentials, RegisterData } from "../auth/authTypes";
+import { api, getStoredToken, setStoredToken, removeStoredToken, ApiError } from "./api";
+import { AuthUser, UserRole } from "../types";
+import {
+  LoginCredentials,
+  LoginResponse,
+  CitizenRegisterPayload,
+  UniversityRegisterPayload,
+  IndustryRegisterPayload,
+  GovernmentRegisterPayload,
+} from "../auth/authTypes";
 
-const STORAGE_KEY = "unibridge_auth_user";
+export interface RegisterResponse {
+  access_token?: string;
+  token_type?: string;
+  user?: AuthUser;
+  message?: string;
+}
+
+/**
+ * Normalizes user objects received from FastAPI/MongoDB into a consistent AuthUser shape.
+ */
+export function normalizeAuthUser(rawUser: any): AuthUser {
+  if (!rawUser) {
+    throw new Error("Invalid user payload received from server");
+  }
+
+  // Support both direct fields and nested profile dict
+  const profile = (typeof rawUser.profile === "object" && rawUser.profile !== null)
+    ? rawUser.profile
+    : {};
+
+  const name =
+    rawUser.name ||
+    profile.name ||
+    profile.full_name ||
+    profile.contact_person ||
+    profile.officer_name ||
+    rawUser.email?.split("@")[0] ||
+    "User";
+
+  const organization =
+    rawUser.organization ||
+    profile.organization ||
+    profile.university_name ||
+    profile.company_name ||
+    profile.department_name ||
+    "";
+
+  const designation =
+    rawUser.designation ||
+    profile.designation ||
+    "";
+
+  const phone =
+    rawUser.phone ||
+    profile.phone ||
+    "";
+
+  const state =
+    rawUser.state ||
+    profile.state ||
+    "";
+
+  const district =
+    rawUser.district ||
+    profile.district ||
+    "";
+
+  const sector =
+    rawUser.sector ||
+    profile.sector ||
+    profile.industry_sector ||
+    "";
+
+  const department =
+    rawUser.department ||
+    profile.department ||
+    profile.department_type ||
+    "";
+
+  const expertise = Array.isArray(rawUser.expertise)
+    ? rawUser.expertise
+    : Array.isArray(profile.expertise)
+    ? profile.expertise
+    : [];
+
+  const capabilities = Array.isArray(rawUser.capabilities)
+    ? rawUser.capabilities
+    : Array.isArray(profile.support_capabilities)
+    ? profile.support_capabilities
+    : [];
+
+  const avatar =
+    rawUser.avatar ||
+    (name ? name.charAt(0).toUpperCase() : rawUser.email?.charAt(0).toUpperCase() || "U");
+
+  return {
+    id: rawUser.id || rawUser._id || String(Date.now()),
+    email: rawUser.email,
+    role: (rawUser.role as UserRole) || "citizen",
+    name,
+    organization,
+    designation,
+    phone,
+    state,
+    district,
+    sector,
+    department,
+    expertise,
+    capabilities,
+    avatar,
+    profile,
+    created_at: rawUser.created_at || rawUser.joinedDate || new Date().toISOString(),
+  };
+}
 
 export const authService = {
-  getCurrentUser(): UserProfile | null {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch {
-      // Fallback
-    }
-    return null;
-  },
-
-  async login(credentials: LoginCredentials): Promise<UserProfile> {
-    // Simulated async delay for realistic UX
-    await new Promise((resolve) => setTimeout(resolve, 400));
-    
-    // Select default mock user for the requested role or build based on input
-    const defaultUser = mockUsers[credentials.role];
-    const user: UserProfile = {
-      ...(defaultUser || mockUsers.citizen),
-      email: credentials.email || defaultUser?.email || "user@unibridge.org",
+  /**
+   * Log in with email, password, and expected role.
+   */
+  async login(credentials: LoginCredentials): Promise<{ user: AuthUser; token: string }> {
+    const response = await api.post<LoginResponse>("/api/auth/login", {
+      email: credentials.email.trim(),
+      password: credentials.password,
       role: credentials.role,
-    };
+    });
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    return user;
-  },
-
-  async register(payload: RegisterData): Promise<UserProfile> {
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    let newUser: UserProfile;
-
-    switch (payload.role) {
-      case "citizen":
-        newUser = {
-          id: `usr-cit-${Date.now().toString().slice(-4)}`,
-          name: payload.data.fullName,
-          email: payload.data.email,
-          role: "citizen",
-          phone: payload.data.phone,
-          state: payload.data.state,
-          district: payload.data.district,
-          joinedDate: "Today",
-        };
-        break;
-      case "university":
-        newUser = {
-          id: `usr-uni-${Date.now().toString().slice(-4)}`,
-          name: payload.data.contactPerson,
-          organization: payload.data.universityName,
-          email: payload.data.email,
-          role: "university",
-          designation: payload.data.designation,
-          state: payload.data.state,
-          district: payload.data.district,
-          expertise: payload.data.expertise,
-          joinedDate: "Today",
-        };
-        break;
-      case "industry":
-        newUser = {
-          id: `usr-ind-${Date.now().toString().slice(-4)}`,
-          name: payload.data.contactPerson,
-          organization: payload.data.companyName,
-          email: payload.data.email,
-          role: "industry",
-          designation: payload.data.designation,
-          sector: payload.data.sector,
-          expertise: payload.data.expertise,
-          capabilities: payload.data.capabilities,
-          joinedDate: "Today",
-        };
-        break;
-      case "government":
-        newUser = {
-          id: `usr-gov-${Date.now().toString().slice(-4)}`,
-          name: payload.data.officerName,
-          department: payload.data.departmentName,
-          email: payload.data.email,
-          role: "government",
-          designation: payload.data.designation,
-          state: payload.data.state,
-          district: payload.data.district,
-          joinedDate: "Today",
-        };
-        break;
+    if (!response || !response.access_token) {
+      throw new ApiError("Invalid response from login endpoint. No access token provided.", 500);
     }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
-    return newUser;
+    setStoredToken(response.access_token);
+    const normalizedUser = normalizeAuthUser(response.user);
+
+    return {
+      user: normalizedUser,
+      token: response.access_token,
+    };
   },
 
-  logout(): void {
-    localStorage.removeItem(STORAGE_KEY);
+  /**
+   * Register a citizen.
+   */
+  async registerCitizen(payload: CitizenRegisterPayload): Promise<RegisterResponse> {
+    return api.post<RegisterResponse>("/api/auth/register/citizen", payload);
   },
 
-  updateProfile(profileUpdate: Partial<UserProfile>): UserProfile | null {
-    const current = this.getCurrentUser();
-    if (!current) return null;
-    const updated = { ...current, ...profileUpdate };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    return updated;
+  /**
+   * Register a university/faculty entity.
+   */
+  async registerUniversity(payload: UniversityRegisterPayload): Promise<RegisterResponse> {
+    return api.post<RegisterResponse>("/api/auth/register/university", payload);
+  },
+
+  /**
+   * Register an industry partner.
+   */
+  async registerIndustry(payload: IndustryRegisterPayload): Promise<RegisterResponse> {
+    return api.post<RegisterResponse>("/api/auth/register/industry", payload);
+  },
+
+  /**
+   * Register a government official.
+   */
+  async registerGovernment(payload: GovernmentRegisterPayload): Promise<RegisterResponse> {
+    return api.post<RegisterResponse>("/api/auth/register/government", payload);
+  },
+
+  /**
+   * Generic role registration dispatcher.
+   */
+  async register(role: UserRole, payload: Record<string, unknown>): Promise<RegisterResponse> {
+    switch (role) {
+      case "citizen":
+        return this.registerCitizen(payload as unknown as CitizenRegisterPayload);
+      case "university":
+        return this.registerUniversity(payload as unknown as UniversityRegisterPayload);
+      case "industry":
+        return this.registerIndustry(payload as unknown as IndustryRegisterPayload);
+      case "government":
+        return this.registerGovernment(payload as unknown as GovernmentRegisterPayload);
+      default:
+        throw new ApiError(`Unsupported registration role: ${role}`, 400);
+    }
+  },
+
+  /**
+   * Verify session token and retrieve current authenticated user info.
+   */
+  async getMe(): Promise<AuthUser> {
+    const token = getStoredToken();
+    if (!token) {
+      throw new ApiError("No authentication token found", 401);
+    }
+
+    const response = await api.get<any>("/api/auth/me");
+    const rawUser = response?.user || response;
+    return normalizeAuthUser(rawUser);
+  },
+
+  /**
+   * Sign out: notify backend if endpoint is available, and clear client-side token.
+   */
+  async logout(): Promise<void> {
+    const token = getStoredToken();
+    if (token) {
+      try {
+        await api.post("/api/auth/logout", {});
+      } catch (err) {
+        // Even if the backend logout endpoint fails or doesn't exist yet, clear local token
+        console.warn("[UniBridge Auth] Backend logout call failed or endpoint not available:", err);
+      }
+    }
+    removeStoredToken();
+  },
+
+  /**
+   * Check if an access token is stored.
+   */
+  hasStoredToken(): boolean {
+    return !!getStoredToken();
+  },
+
+  /**
+   * Retrieve the stored token string.
+   */
+  getStoredToken(): string | null {
+    return getStoredToken();
   },
 };

@@ -43,7 +43,7 @@ export default function UniversityFaculty() {
         badge="Academic Leadership"
         badgeColor="#8B5CF6"
         title="Faculty Management & Mentorship"
-        subtitle="Principal Investigators supervising SIH 2026 student innovation laboratories."
+        subtitle="Principal Investigators supervising student innovation laboratories."
       />
 
       <PageContainer>

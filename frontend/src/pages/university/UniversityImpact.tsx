@@ -28,7 +28,7 @@ export default function UniversityImpact() {
             value="₹42 Lakhs"
             icon={TrendingUp}
             color="#10B981"
-            subtext="Industry + SIH Grants"
+            subtext="Industry & Research Grants"
           />
           <StatCard
             label="Farmers Benefited"

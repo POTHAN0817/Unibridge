@@ -47,6 +47,7 @@ export default function ReportChallenge() {
   const [aiCategory, setAiCategory] = useState("");
   const [aiConfidence, setAiConfidence] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     if (description.length > 25) {
@@ -80,23 +81,37 @@ export default function ReportChallenge() {
   }, [description]);
 
   const handleSubmit = async () => {
-    setSubmitting(true);
-    const newChallenge = await challengeService.createChallenge({
-      title,
-      description,
-      category: aiCategory || category,
-      location: `${village}, ${district}, ${state}`,
-      state,
-      district,
-      priority: urgency === "high" ? "HIGH" : urgency === "medium" ? "MEDIUM" : "LOW",
-      affectedPeople,
-      submittedBy: user?.name || "Citizen Reporter",
-      tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
-    });
+    try {
+      setSubmitting(true);
+      setSubmitError(null);
+      await challengeService.createChallenge({
+        title,
+        description,
+        category: aiCategory || category,
+        location: {
+          district,
+          state,
+          address: village,
+        },
+        state,
+        district,
+        priority: urgency === "high" ? "HIGH" : urgency === "medium" ? "MEDIUM" : "LOW",
+        affectedPeople,
+        submittedBy: user?.name || "Citizen Reporter",
+        tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+      } as any);
 
-    setSubmitting(false);
-    navigate(`/citizen/challenges/${newChallenge.id}`);
+      navigate("/citizen/dashboard");
+    } catch (err: any) {
+      console.error("Failed to submit challenge:", err);
+      setSubmitError(
+        err.message || "Failed to submit challenge. Please check your network and make sure all fields are valid."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
+
 
   const progressLabels = ["1. Problem Description", "2. Location & Scope", "3. Impact Details", "4. AI Review & Submit"];
 
@@ -490,7 +505,18 @@ export default function ReportChallenge() {
                 </div>
               </div>
 
+              {submitError && (
+                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-3">
+                  <AlertTriangle size={18} className="flex-shrink-0 text-rose-500 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Submission Error: </span>
+                    <span>{submitError}</span>
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-between pt-4 border-t border-gray-100">
+
                 <button
                   type="button"
                   onClick={() => setStep(3)}

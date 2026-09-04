@@ -98,19 +98,7 @@ export const Navbar: React.FC = () => {
           </RouterLink>
         </div>
 
-        <div className="hidden md:flex items-center gap-6">
-          <RouterLink
-            to="/"
-            className="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors"
-          >
-            Home
-          </RouterLink>
-          <RouterLink
-            to="/roles"
-            className="text-gray-600 hover:text-blue-600 text-sm font-medium transition-colors"
-          >
-            Portal Roles
-          </RouterLink>
+        <div className="flex items-center gap-4">
           <RouterLink
             to="/roles"
             className="px-4 py-2 rounded-xl text-sm font-semibold text-white transition-all hover:scale-105 shadow-sm"

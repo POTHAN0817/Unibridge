@@ -1,5 +1,10 @@
 import { UserProfile } from "../../types";
 
+/**
+ * @deprecated TEMPORARY MOCK DATA - NOT USED FOR AUTHENTICATION
+ * Authentication now strictly connects to FastAPI backend endpoints.
+ * This file is retained only for historical mock schema reference.
+ */
 export const mockUsers: Record<string, UserProfile> = {
   citizen: {
     id: "usr-cit-001",

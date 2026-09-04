@@ -61,10 +61,10 @@ export default function GovCommandCenter() {
     <div className="min-h-screen bg-white">
       {/* Header Banner */}
       <DashboardHeader
-        badge="DEPARTMENT OF SCIENCE & TECHNOLOGY · GOVT OF INDIA"
+        badge={user?.department || (user?.profile as Record<string, any>)?.department_name || "DEPARTMENT OF SCIENCE & TECHNOLOGY · GOVT OF INDIA"}
         badgeColor="#10B981"
         title="National Innovation Command Center"
-        subtitle={`Live monitoring & policy oversight · Signed in as ${user?.name || "Officer Rajan"} (${user?.department || "Societal Solutions Division"})`}
+        subtitle={`Live monitoring & policy oversight · Signed in as ${user?.name || (user?.profile as Record<string, any>)?.officer_name || "Nodal Officer"}${user?.department ? ` (${user.department})` : ""}`}
       >
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200">
