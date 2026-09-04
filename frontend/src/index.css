@@ -1,0 +1,156 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import 'tailwindcss';
+
+html,
+body,
+#root {
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+  background-color: #FFFFFF;
+  color: #071A33;
+}
+
+@theme inline {
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-navy: #071A33;
+  --color-navy-mid: #0D2645;
+  --color-navy-light: #163459;
+  --color-electric: #0B63F6;
+  --color-electric-light: #3A7FF8;
+  --color-cyan: #00C2FF;
+  --color-cyan-dim: #00A8DC;
+  --color-emerald: #10B981;
+  --color-amber: #F59E0B;
+  --color-critical: #EF4444;
+  --color-surface: #F6F9FC;
+  --color-surface-2: #EBF1F8;
+  --color-glass: rgba(255, 255, 255, 0.9);
+  --color-glass-border: rgba(11, 99, 246, 0.1);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(11, 99, 246, 0.3) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(11, 99, 246, 0.3);
+  border-radius: 2px;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 194, 255, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(0, 194, 255, 0); }
+}
+
+@keyframes flow-line {
+  0% { stroke-dashoffset: 1000; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(-16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes node-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.8; }
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(400%); }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.float { animation: float 4s ease-in-out infinite; }
+.float-delay-1 { animation: float 4s ease-in-out 0.5s infinite; }
+.float-delay-2 { animation: float 4s ease-in-out 1s infinite; }
+.pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.node-pulse { animation: node-pulse 2s ease-in-out infinite; }
+
+.gradient-text {
+  background: linear-gradient(135deg, #0B63F6 0%, #00C2FF 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-warm {
+  background: linear-gradient(135deg, #00C2FF 0%, #10B981 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass-card {
+  background: #FFFFFF;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(11, 99, 246, 0.1);
+  box-shadow: 0 4px 20px rgba(7, 26, 51, 0.04);
+}
+
+.glass-card-light {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(11, 99, 246, 0.12);
+}
+
+.electric-border {
+  border: 1px solid rgba(11, 99, 246, 0.3);
+}
+
+.network-bg {
+  background-color: #FFFFFF;
+  background-image: radial-gradient(circle at 25% 25%, rgba(11, 99, 246, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(0, 194, 255, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(246, 249, 252, 0.9) 0%, #FFFFFF 100%);
+}
+
+.command-bg {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 50%, #F1F5F9 100%);
+}
+
+.priority-high {
+  background: rgba(239, 68, 68, 0.15);
+  color: #EF4444;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.priority-medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: #F59E0B;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.priority-low {
+  background: rgba(16, 185, 129, 0.15);
+  color: #10B981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
