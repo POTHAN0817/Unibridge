@@ -1,3 +1,6 @@
+export * from "./types/index";
+
+// Backward compatibility legacy Page type if needed
 export type Page =
   | "landing"
   | "role-select"
@@ -8,5 +11,3 @@ export type Page =
   | "university-dashboard"
   | "project-workspace"
   | "impact";
-
-export type Role = "citizen" | "university" | "industry" | "government" | "faculty";
