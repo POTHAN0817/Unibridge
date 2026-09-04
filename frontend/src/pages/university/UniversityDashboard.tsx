@@ -60,7 +60,7 @@ export default function UniversityDashboard() {
     <div className="min-h-screen bg-white">
       {/* Header Banner */}
       <DashboardHeader
-        badge={user?.organization || "KALASALINGAM ACADEMY OF RESEARCH AND EDUCATION"}
+        badge={user?.organization || (user?.profile as Record<string, any>)?.university_name || "INSTITUTIONAL INNOVATION CENTER"}
         badgeColor="#8B5CF6"
         title="University Innovation & Faculty Command Center"
         subtitle="AI-matched societal challenges, student-faculty multidisciplinary teams, and real-world pilot projects."

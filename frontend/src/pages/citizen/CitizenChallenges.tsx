@@ -28,12 +28,20 @@ export default function CitizenChallenges() {
 
   useEffect(() => {
     async function fetchChallenges() {
-      const data = await challengeService.getAllChallenges();
-      setChallenges(data);
-      setLoading(false);
+      try {
+        setLoading(true);
+        const data = await challengeService.getMyChallenges();
+        setChallenges(data);
+      } catch (err) {
+        console.error("Failed to fetch my challenges:", err);
+        setChallenges([]);
+      } finally {
+        setLoading(false);
+      }
     }
     fetchChallenges();
   }, []);
+
 
   const categories = ["all", ...new Set(challenges.map((c) => c.category))];
 

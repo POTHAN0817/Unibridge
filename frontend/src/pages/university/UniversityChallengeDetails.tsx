@@ -80,7 +80,7 @@ export default function UniversityChallengeDetails() {
                 <div>
                   <h4 className="text-xs font-bold text-purple-900">CivicAI Research Synthesis</h4>
                   <p className="text-xs text-purple-800/80 mt-1">
-                    {challenge.aiSummary || "Recommended for student final year capstone or faculty-led innovation grant under SIH 2026."}
+                    {challenge.aiSummary || "Recommended for student final year capstone or faculty-led innovation grant."}
                   </p>
                 </div>
               </div>

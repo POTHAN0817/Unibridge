@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { DashboardHeader } from "../../components/dashboard/DashboardHeader";
 import { PageContainer } from "../../components/layout/PageContainer";
@@ -7,12 +7,22 @@ import { Briefcase, Mail, Phone, Building, Save, CheckCircle2 } from "lucide-rea
 export default function IndustryProfile() {
   const { user, updateProfile, logout } = useAuth();
 
-  const [company, setCompany] = useState(user?.organization || "CoolTech India Pvt. Ltd.");
-  const [name, setName] = useState(user?.name || "Rajesh Mehta");
-  const [designation, setDesignation] = useState(user?.designation || "VP, Sustainable Tech & Corporate Innovation");
-  const [phone, setPhone] = useState(user?.phone || "+91 98200 45678");
-  const [sector, setSector] = useState(user?.sector || "CleanTech & Industrial IoT");
+  const [company, setCompany] = useState(user?.organization || "");
+  const [name, setName] = useState(user?.name || "");
+  const [designation, setDesignation] = useState(user?.designation || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [sector, setSector] = useState(user?.sector || "");
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setCompany(user.organization || (user.profile as Record<string, any>)?.company_name || "");
+      setName(user.name || (user.profile as Record<string, any>)?.contact_person || (user.profile as Record<string, any>)?.full_name || "");
+      setDesignation(user.designation || (user.profile as Record<string, any>)?.designation || "");
+      setPhone(user.phone || (user.profile as Record<string, any>)?.phone || "");
+      setSector(user.sector || (user.profile as Record<string, any>)?.industry_sector || "");
+    }
+  }, [user]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();

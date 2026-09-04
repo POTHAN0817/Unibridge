@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { DashboardHeader } from "../../components/dashboard/DashboardHeader";
 import { PageContainer } from "../../components/layout/PageContainer";
@@ -7,11 +7,20 @@ import { GraduationCap, Mail, Phone, Building, Save, CheckCircle2 } from "lucide
 export default function UniversityProfile() {
   const { user, updateProfile, logout } = useAuth();
 
-  const [org, setOrg] = useState(user?.organization || "Kalasalingam Academy of Research and Education");
-  const [name, setName] = useState(user?.name || "Dr. Anjali Kumar");
-  const [designation, setDesignation] = useState(user?.designation || "Head of Department");
-  const [phone, setPhone] = useState(user?.phone || "+91 94432 78901");
+  const [org, setOrg] = useState(user?.organization || "");
+  const [name, setName] = useState(user?.name || "");
+  const [designation, setDesignation] = useState(user?.designation || "");
+  const [phone, setPhone] = useState(user?.phone || "");
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setOrg(user.organization || (user.profile as Record<string, any>)?.university_name || "");
+      setName(user.name || (user.profile as Record<string, any>)?.contact_person || (user.profile as Record<string, any>)?.full_name || "");
+      setDesignation(user.designation || (user.profile as Record<string, any>)?.designation || "");
+      setPhone(user.phone || (user.profile as Record<string, any>)?.phone || "");
+    }
+  }, [user]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();

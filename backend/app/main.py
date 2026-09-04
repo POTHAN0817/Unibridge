@@ -1,16 +1,56 @@
+from contextlib import asynccontextmanager
+import logging
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
-from app.database.mongodb import test_database_connection
+from app.database.mongodb import init_db_indexes, test_database_connection
+from app.routers.auth import router as auth_router
+from app.routers.challenges import router as challenges_router
+
+
+logger = logging.getLogger("unibridge.backend")
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup actions
+    try:
+        test_database_connection()
+        init_db_indexes()
+        logger.info("MongoDB connection verified and indexes initialized.")
+    except Exception as error:
+        logger.error(f"Failed to initialize database: {error}")
+    yield
+    # Shutdown actions (if any)
 
 
 app = FastAPI(
     title="UniBridge API",
-    description="Backend API for the UniBridge societal problem-solving platform",
+    description="Backend API for the UniBridge societal problem-solving platform (SIH 2026)",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
+# CORS Configuration for local frontend development
+origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
-@app.get("/")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Register API Routers
+app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
+app.include_router(challenges_router, prefix="/api/challenges", tags=["Challenges"])
+
+
+@app.get("/", tags=["System"])
 def root():
     return {
         "message": "UniBridge API is running",
@@ -18,23 +58,21 @@ def root():
     }
 
 
-@app.get("/health")
+@app.get("/health", tags=["System"])
 def health_check():
     return {
         "status": "healthy",
     }
 
 
-@app.get("/health/database")
+@app.get("/health/database", tags=["System"])
 def database_health_check():
     try:
         test_database_connection()
-
         return {
             "status": "healthy",
             "database": "connected",
         }
-
     except Exception as error:
         raise HTTPException(
             status_code=503,

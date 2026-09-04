@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { DashboardHeader } from "../../components/dashboard/DashboardHeader";
 import { PageContainer } from "../../components/layout/PageContainer";
@@ -12,6 +12,15 @@ export default function CitizenProfile() {
   const [state, setState] = useState(user?.state || "");
   const [district, setDistrict] = useState(user?.district || "");
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || "");
+      setPhone(user.phone || "");
+      setState(user.state || "");
+      setDistrict(user.district || "");
+    }
+  }, [user]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,10 +53,10 @@ export default function CitizenProfile() {
           {/* User badge */}
           <div className="flex items-center gap-4 pb-6 border-b border-gray-100 mb-6">
             <div className="w-16 h-16 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-xl font-extrabold shadow-sm">
-              {user?.avatar || user?.name?.[0] || "C"}
+              {user?.avatar || (user?.name ? user.name[0].toUpperCase() : user?.email ? user.email[0].toUpperCase() : "C")}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#071A33]">{user?.name}</h2>
+              <h2 className="text-xl font-bold text-[#071A33]">{user?.name || user?.email || "Citizen User"}</h2>
               <p className="text-xs text-gray-500">{user?.email}</p>
               <div className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full">
                 <Shield size={11} /> Verified Citizen Reporter
@@ -69,6 +78,7 @@ export default function CitizenProfile() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    placeholder="Your Full Name"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
                   />
                 </div>
@@ -86,6 +96,7 @@ export default function CitizenProfile() {
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+91 98401 23456"
                     className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
                   />
                 </div>
@@ -101,6 +112,7 @@ export default function CitizenProfile() {
                   type="text"
                   value={state}
                   onChange={(e) => setState(e.target.value)}
+                  placeholder="State"
                   className="w-full px-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
                 />
               </div>
@@ -113,6 +125,7 @@ export default function CitizenProfile() {
                   type="text"
                   value={district}
                   onChange={(e) => setDistrict(e.target.value)}
+                  placeholder="District"
                   className="w-full px-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
                 />
               </div>

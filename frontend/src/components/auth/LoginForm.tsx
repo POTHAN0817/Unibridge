@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Lock, Mail, ArrowRight, CheckCircle2, Sparkles } from "lucide-react";
+import { Lock, Mail, ArrowRight, AlertCircle } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext";
 import { UserRole } from "../../types";
-import { mockUsers } from "../../data/mock/users";
 
 interface LoginFormProps {
   role: UserRole;
@@ -18,67 +17,70 @@ export const LoginForm: React.FC<LoginFormProps> = ({
 }) => {
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
-  const defaultMock = mockUsers[role];
 
-  const [email, setEmail] = useState(defaultMock?.email || "");
-  const [password, setPassword] = useState("password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    if (isSubmitting || isLoading) return;
 
-    if (!email) {
-      setError("Please enter your email address.");
+    setErrorMessage(null);
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setErrorMessage("Please enter your email address.");
       return;
     }
 
-    const success = await login({
-      email,
-      password,
-      role,
-      rememberMe,
-    });
+    if (!password) {
+      setErrorMessage("Please enter your password.");
+      return;
+    }
 
-    if (success) {
-      navigate(`/${role}/dashboard`);
-    } else {
-      setError("Authentication failed. Please check your credentials.");
+    setIsSubmitting(true);
+
+    try {
+      const result = await login({
+        email: trimmedEmail,
+        password,
+        role,
+      });
+
+      if (result.success) {
+        // Redirection based on role
+        navigate(`/${role}/dashboard`, { replace: true });
+      } else {
+        setErrorMessage(result.error || "Invalid email or password.");
+      }
+    } catch (err: any) {
+      console.error("[UniBridge Login] Error during submit:", err);
+      if (err.message && err.message.includes("Unable to connect")) {
+        setErrorMessage("Unable to connect to UniBridge backend. Please check your network or verify the server is running.");
+      } else {
+        setErrorMessage("Something went wrong. Please try again later.");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const handleQuickDemoFill = () => {
-    if (defaultMock) {
-      setEmail(defaultMock.email);
-      setPassword("password123");
-    }
-  };
+  const isBusy = isLoading || isSubmitting;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {error && (
-        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-600">
-          {error}
+      {errorMessage && (
+        <div
+          role="alert"
+          className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700 flex items-start gap-2 animate-in fade-in duration-200"
+        >
+          <AlertCircle size={16} className="text-rose-500 mt-0.5 flex-shrink-0" />
+          <div className="leading-snug">{errorMessage}</div>
         </div>
       )}
-
-      {/* Demo helper banner */}
-      <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-100 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <Sparkles size={14} className="text-blue-600" />
-          <span className="text-xs text-blue-800 font-medium">
-            Demo account: <strong className="font-semibold">{defaultMock?.name}</strong>
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={handleQuickDemoFill}
-          className="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline cursor-pointer"
-        >
-          Auto-fill
-        </button>
-      </div>
 
       <div>
         <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
@@ -91,10 +93,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <input
             type="email"
             required
+            autoComplete="email"
+            disabled={isBusy}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@domain.com"
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-gray-900 bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-gray-900 bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none transition-all disabled:opacity-60"
           />
         </div>
       </div>
@@ -108,7 +112,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
             href="#forgot"
             onClick={(e) => {
               e.preventDefault();
-              alert("Password reset instructions have been sent to your registered email (Mock).");
+              alert("Password recovery is handled via official institutional email verification.");
             }}
             className="text-xs font-medium text-blue-600 hover:text-blue-700"
           >
@@ -122,10 +126,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <input
             type="password"
             required
+            autoComplete="current-password"
+            disabled={isBusy}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-gray-900 bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none transition-all"
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm text-gray-900 bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none transition-all disabled:opacity-60"
           />
         </div>
       </div>
@@ -135,21 +141,25 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           <input
             type="checkbox"
             checked={rememberMe}
+            disabled={isBusy}
             onChange={(e) => setRememberMe(e.target.checked)}
             className="w-4 h-4 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
           />
-          <span className="text-xs text-gray-600">Remember me for 30 days</span>
+          <span className="text-xs text-gray-600">Keep me signed in</span>
         </label>
       </div>
 
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={isBusy}
         className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold text-white shadow-sm hover:opacity-95 transition-all cursor-pointer disabled:opacity-50"
         style={{ background: submitButtonColor }}
       >
-        {isLoading ? (
-          <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+        {isBusy ? (
+          <>
+            <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+            <span>Signing in...</span>
+          </>
         ) : (
           <>
             Sign In to {role.charAt(0).toUpperCase() + role.slice(1)} Portal

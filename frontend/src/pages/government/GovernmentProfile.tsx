@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../auth/AuthContext";
 import { DashboardHeader } from "../../components/dashboard/DashboardHeader";
 import { PageContainer } from "../../components/layout/PageContainer";
@@ -7,13 +7,24 @@ import { Landmark, Mail, Phone, Building, Save, CheckCircle2 } from "lucide-reac
 export default function GovernmentProfile() {
   const { user, updateProfile, logout } = useAuth();
 
-  const [dept, setDept] = useState(user?.department || "Department of Science & Technology");
-  const [name, setName] = useState(user?.name || "Officer Rajan");
-  const [designation, setDesignation] = useState(user?.designation || "Director of Innovation & Rural Solutions");
-  const [phone, setPhone] = useState(user?.phone || "+91 98111 22334");
-  const [state, setState] = useState(user?.state || "Tamil Nadu");
-  const [district, setDistrict] = useState(user?.district || "Chennai");
+  const [dept, setDept] = useState(user?.department || "");
+  const [name, setName] = useState(user?.name || "");
+  const [designation, setDesignation] = useState(user?.designation || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [state, setState] = useState(user?.state || "");
+  const [district, setDistrict] = useState(user?.district || "");
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setDept(user.department || (user.profile as Record<string, any>)?.department_name || "");
+      setName(user.name || (user.profile as Record<string, any>)?.officer_name || (user.profile as Record<string, any>)?.full_name || "");
+      setDesignation(user.designation || (user.profile as Record<string, any>)?.designation || "");
+      setPhone(user.phone || (user.profile as Record<string, any>)?.phone || "");
+      setState(user.state || (user.profile as Record<string, any>)?.state || "");
+      setDistrict(user.district || (user.profile as Record<string, any>)?.district || "");
+    }
+  }, [user]);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();

@@ -6,11 +6,11 @@ export type ChallengeStatus = "Submitted" | "AI Analyzed" | "Validated" | "Assig
 
 export type PriorityLevel = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
-export interface UserProfile {
+export interface AuthUser {
   id: string;
-  name: string;
   email: string;
   role: UserRole;
+  name?: string;
   avatar?: string;
   phone?: string;
   state?: string;
@@ -21,8 +21,13 @@ export interface UserProfile {
   sector?: string;
   expertise?: string[];
   capabilities?: string[];
-  joinedDate: string;
+  profile?: Record<string, unknown>;
+  created_at?: string;
+  joinedDate?: string;
 }
+
+// UserProfile is an alias for AuthUser
+export type UserProfile = AuthUser;
 
 export interface Challenge {
   id: string;

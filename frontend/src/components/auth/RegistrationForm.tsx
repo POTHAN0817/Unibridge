@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserRole } from "../../types";
 import { useAuth } from "../../auth/AuthContext";
-import { RegisterData } from "../../auth/authTypes";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import { ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface RegistrationFormProps {
   role: UserRole;
@@ -52,7 +51,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [state, setState] = useState("Tamil Nadu");
   const [district, setDistrict] = useState("Virudhunagar");
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Role specific fields
   const [name, setName] = useState("");
@@ -66,109 +67,152 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    if (isSubmitting || isLoading) return;
+
+    setErrorMessage(null);
+    setSuccessMessage(null);
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      setErrorMessage("Please enter an email address.");
+      return;
+    }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setErrorMessage("Passwords do not match.");
       return;
     }
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setErrorMessage("Password must be at least 6 characters long.");
       return;
     }
 
     if (!termsAccepted) {
-      setError("Please accept the terms of service and civic participation charter.");
+      setErrorMessage("Please accept the terms of service and civic participation charter.");
       return;
     }
 
     const expertiseArray = expertiseString
       ? expertiseString.split(",").map((s) => s.trim()).filter(Boolean)
-      : ["General"];
+      : [];
 
     const capabilitiesArray = capabilitiesString
       ? capabilitiesString.split(",").map((s) => s.trim()).filter(Boolean)
-      : ["Mentorship", "Technical Support"];
+      : [];
 
-    let payload: RegisterData;
+    let payload: Record<string, unknown>;
 
     switch (role) {
       case "citizen":
         payload = {
-          role: "citizen",
-          data: {
-            fullName: name || "Citizen Volunteer",
-            email,
-            phone,
-            password,
-            state,
-            district,
-            termsAccepted,
-          },
+          full_name: name.trim(),
+          email: trimmedEmail,
+          phone: phone.trim(),
+          password,
+          confirm_password: confirmPassword,
+          state,
+          district,
+          terms_accepted: termsAccepted,
         };
         break;
+
       case "university":
         payload = {
-          role: "university",
-          data: {
-            universityName: orgName || "Institution of Technology",
-            email,
-            contactPerson: name || "Faculty Representative",
-            designation: designation || "Professor / Dean",
-            password,
-            state,
-            district,
-            expertise: expertiseArray,
-          },
+          university_name: orgName.trim(),
+          university_email: trimmedEmail,
+          contact_person: name.trim(),
+          designation: designation.trim(),
+          password,
+          confirm_password: confirmPassword,
+          state,
+          district,
+          expertise: expertiseArray,
         };
         break;
+
       case "industry":
         payload = {
-          role: "industry",
-          data: {
-            companyName: orgName || "Enterprise Partner",
-            email,
-            contactPerson: name || "Innovation Lead",
-            designation: designation || "Director",
-            password,
-            sector,
-            location: `${district}, ${state}`,
-            expertise: expertiseArray,
-            capabilities: capabilitiesArray,
-          },
+          company_name: orgName.trim(),
+          official_email: trimmedEmail,
+          contact_person: name.trim(),
+          designation: designation.trim(),
+          password,
+          confirm_password: confirmPassword,
+          industry_sector: sector.trim(),
+          location: `${district}, ${state}`,
+          expertise: expertiseArray,
+          support_capabilities: capabilitiesArray,
         };
         break;
+
       case "government":
         payload = {
-          role: "government",
-          data: {
-            departmentName: orgName || "Department of Public Administration",
-            email,
-            officerName: name || "Nodal Officer",
-            designation: designation || "District Officer",
-            password,
-            state,
-            district,
-            departmentType: deptType,
-          },
+          department_name: orgName.trim(),
+          official_email: trimmedEmail,
+          officer_name: name.trim(),
+          designation: designation.trim(),
+          password,
+          confirm_password: confirmPassword,
+          state,
+          district,
+          department_type: deptType,
         };
         break;
     }
 
-    const success = await register(payload);
-    if (success) {
-      navigate(`/${role}/dashboard`);
-    } else {
-      setError("Registration failed. Please try again.");
+    setIsSubmitting(true);
+
+    try {
+      const result = await register(role, payload);
+
+      if (result.success) {
+        if (result.autoLoggedIn) {
+          // Option A: Backend logged user in immediately
+          navigate(`/${role}/dashboard`, { replace: true });
+        } else {
+          // Option B: Registration created; redirect to login
+          setSuccessMessage("Registration successful! Redirecting to login portal...");
+          setTimeout(() => {
+            navigate(loginPath, { replace: true });
+          }, 1600);
+        }
+      } else {
+        setErrorMessage(result.error || "Registration failed. Please check form values.");
+      }
+    } catch (err: any) {
+      console.error("[UniBridge Register] Error:", err);
+      if (err.message && err.message.includes("Unable to connect")) {
+        setErrorMessage("Unable to connect to UniBridge backend. Please verify the backend server is active.");
+      } else {
+        setErrorMessage(err.message || "An unexpected error occurred. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  const isBusy = isLoading || isSubmitting;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-600">
-          {error}
+      {errorMessage && (
+        <div
+          role="alert"
+          className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700 flex items-start gap-2 animate-in fade-in duration-200"
+        >
+          <AlertCircle size={16} className="text-rose-500 mt-0.5 flex-shrink-0" />
+          <div className="leading-snug">{errorMessage}</div>
+        </div>
+      )}
+
+      {successMessage && (
+        <div
+          role="status"
+          className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800 flex items-center gap-2 animate-in fade-in duration-200"
+        >
+          <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0" />
+          <div className="leading-snug">{successMessage}</div>
         </div>
       )}
 
@@ -182,10 +226,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             <input
               type="text"
               required
+              disabled={isBusy}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. Sushmitha Krishnan"
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none disabled:opacity-60"
             />
           </div>
           <div>
@@ -195,10 +240,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             <input
               type="tel"
               required
+              disabled={isBusy}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+91 98401 23456"
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none disabled:opacity-60"
             />
           </div>
         </>
@@ -213,10 +259,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             <input
               type="text"
               required
+              disabled={isBusy}
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
               placeholder="e.g. Kalasalingam Academy of Research and Education"
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-purple-600 focus:outline-none"
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-purple-600 focus:outline-none disabled:opacity-60"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -227,10 +274,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <input
                 type="text"
                 required
+                disabled={isBusy}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Dr. Anjali Kumar"
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-purple-600 focus:outline-none"
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-purple-600 focus:outline-none disabled:opacity-60"
               />
             </div>
             <div>
@@ -240,10 +288,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <input
                 type="text"
                 required
+                disabled={isBusy}
                 value={designation}
                 onChange={(e) => setDesignation(e.target.value)}
                 placeholder="Head of Department"
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-purple-600 focus:outline-none"
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-purple-600 focus:outline-none disabled:opacity-60"
               />
             </div>
           </div>
@@ -253,10 +302,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </label>
             <input
               type="text"
+              disabled={isBusy}
               value={expertiseString}
               onChange={(e) => setExpertiseString(e.target.value)}
               placeholder="e.g. IoT, Agricultural Engineering, Water Treatment"
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-purple-600 focus:outline-none"
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-purple-600 focus:outline-none disabled:opacity-60"
             />
           </div>
         </>
@@ -271,10 +321,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             <input
               type="text"
               required
+              disabled={isBusy}
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
               placeholder="e.g. CoolTech India Pvt. Ltd."
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:outline-none"
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:outline-none disabled:opacity-60"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -285,10 +336,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <input
                 type="text"
                 required
+                disabled={isBusy}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Rajesh Mehta"
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:outline-none"
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:outline-none disabled:opacity-60"
               />
             </div>
             <div>
@@ -298,10 +350,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <input
                 type="text"
                 required
+                disabled={isBusy}
                 value={designation}
                 onChange={(e) => setDesignation(e.target.value)}
                 placeholder="VP, Innovation"
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:outline-none"
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:outline-none disabled:opacity-60"
               />
             </div>
           </div>
@@ -311,10 +364,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </label>
             <input
               type="text"
+              disabled={isBusy}
               value={sector}
               onChange={(e) => setSector(e.target.value)}
               placeholder="e.g. CleanTech, Agri-IoT, Cloud & AI"
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:outline-none"
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:outline-none disabled:opacity-60"
             />
           </div>
           <div>
@@ -323,10 +377,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             </label>
             <input
               type="text"
+              disabled={isBusy}
               value={capabilitiesString}
               onChange={(e) => setCapabilitiesString(e.target.value)}
               placeholder="e.g. Mentorship, Prototype Grants, Cloud Credits"
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:outline-none"
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-amber-600 focus:outline-none disabled:opacity-60"
             />
           </div>
         </>
@@ -341,10 +396,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             <input
               type="text"
               required
+              disabled={isBusy}
               value={orgName}
               onChange={(e) => setOrgName(e.target.value)}
               placeholder="e.g. Department of Science & Technology"
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-emerald-600 focus:outline-none"
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-emerald-600 focus:outline-none disabled:opacity-60"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -355,10 +411,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <input
                 type="text"
                 required
+                disabled={isBusy}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Officer Rajan"
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-emerald-600 focus:outline-none"
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-emerald-600 focus:outline-none disabled:opacity-60"
               />
             </div>
             <div>
@@ -368,10 +425,11 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               <input
                 type="text"
                 required
+                disabled={isBusy}
                 value={designation}
                 onChange={(e) => setDesignation(e.target.value)}
                 placeholder="Director of Innovation"
-                className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-emerald-600 focus:outline-none"
+                className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-emerald-600 focus:outline-none disabled:opacity-60"
               />
             </div>
           </div>
@@ -380,9 +438,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
               Department Type
             </label>
             <select
+              disabled={isBusy}
               value={deptType}
               onChange={(e) => setDeptType(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-emerald-600 focus:outline-none"
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-emerald-600 focus:outline-none disabled:opacity-60"
             >
               <option value="Science & Technology">Science & Technology</option>
               <option value="Agriculture & Farmers Welfare">Agriculture & Farmers Welfare</option>
@@ -402,10 +461,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         <input
           type="email"
           required
+          autoComplete="email"
+          disabled={isBusy}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="your.email@organization.org"
-          className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
+          placeholder="your.email@domain.com"
+          className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none disabled:opacity-60"
         />
       </div>
 
@@ -417,10 +478,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <input
             type="password"
             required
+            autoComplete="new-password"
+            disabled={isBusy}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
-            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
+            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none disabled:opacity-60"
           />
         </div>
         <div>
@@ -430,10 +493,12 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <input
             type="password"
             required
+            autoComplete="new-password"
+            disabled={isBusy}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             placeholder="••••••••"
-            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
+            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none disabled:opacity-60"
           />
         </div>
       </div>
@@ -445,9 +510,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             State
           </label>
           <select
+            disabled={isBusy}
             value={state}
             onChange={(e) => setState(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
+            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none disabled:opacity-60"
           >
             {statesOfIndia.map((s) => (
               <option key={s} value={s}>
@@ -461,9 +527,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
             District
           </label>
           <select
+            disabled={isBusy}
             value={district}
             onChange={(e) => setDistrict(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
+            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none disabled:opacity-60"
           >
             {tamilNaduDistricts.map((d) => (
               <option key={d} value={d}>
@@ -480,24 +547,28 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           <input
             type="checkbox"
             required
+            disabled={isBusy}
             checked={termsAccepted}
             onChange={(e) => setTermsAccepted(e.target.checked)}
             className="mt-0.5 w-4 h-4 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
           />
           <span className="text-xs text-gray-600 leading-relaxed">
-            I agree to the UniBridge SIH 2026 Terms of Service, Public Interest Charter, and verified collaborative participation.
+            I agree to the UniBridge Terms of Service, Public Interest Charter, and verified collaborative participation.
           </span>
         </label>
       </div>
 
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={isBusy}
         className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-bold text-white shadow-sm hover:opacity-95 transition-all cursor-pointer disabled:opacity-50 mt-4"
         style={{ background: submitButtonColor }}
       >
-        {isLoading ? (
-          <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+        {isBusy ? (
+          <>
+            <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+            <span>Creating account...</span>
+          </>
         ) : (
           <>
             Complete {role.charAt(0).toUpperCase() + role.slice(1)} Registration
