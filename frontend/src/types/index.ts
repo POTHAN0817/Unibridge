@@ -88,6 +88,68 @@ export interface UniversityFacultyItem {
   research_areas?: string[];
 }
 
+export interface FacultyMember {
+  id: string;
+  _id?: string;
+  university_id: string;
+  name: string;
+  email: string;
+  designation?: string;
+  department?: string;
+  expertise: string[];
+  skills: string[];
+  research_areas: string[];
+  availability: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FacultyCreateInput {
+  name: string;
+  email: string;
+  designation?: string;
+  department?: string;
+  expertise?: string[];
+  skills?: string[];
+  research_areas?: string[];
+  availability?: boolean;
+}
+
+export interface StudentMember {
+  id: string;
+  _id?: string;
+  university_id: string;
+  name: string;
+  email: string;
+  department?: string;
+  degree?: string;
+  program?: string;
+  skills: string[];
+  interests: string[];
+  availability: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StudentCreateInput {
+  name: string;
+  email: string;
+  department?: string;
+  degree?: string;
+  skills?: string[];
+  interests?: string[];
+  availability?: boolean;
+}
+
+export interface StudentUpdateInput {
+  name?: string;
+  department?: string;
+  degree?: string;
+  skills?: string[];
+  interests?: string[];
+  availability?: boolean;
+}
+
 export interface UniversityProjectItem {
   title: string;
   description?: string;
@@ -156,6 +218,128 @@ export interface UniversityMatchesResult {
   matches: UniversityMatchCandidate[];
   model_version: string;
   calculated_at?: string;
+}
+
+export interface UniversityMatchedChallenge {
+  challenge_id: string;
+  title: string;
+  description: string;
+  category: string;
+  subcategory?: string;
+  location?: any;
+  status: string;
+  affected_people?: number;
+  urgency?: string;
+  ai_status?: string;
+  ai_analysis?: any;
+  priority_analysis?: any;
+  duplicate_analysis?: any;
+  priority_score?: number;
+  match_score: number;
+  match_level: string;
+  matched_skills: string[];
+  missing_skills: string[];
+  matched_departments: string[];
+  matched_faculty: string[];
+  explanation: string;
+  match_evaluation?: any;
+  created_at?: string;
+}
+
+export interface UniversityChallengeDossier {
+  challenge_id: string;
+  title: string;
+  description: string;
+  category: string;
+  subcategory?: string;
+  location: string;
+  location_details?: Record<string, any>;
+  affected_people?: number;
+  urgency: string;
+  status: string;
+  submission_date: string;
+  created_at: string;
+  image?: ChallengeImage | null;
+  ai_status: string;
+  ai_analysis: {
+    category?: string;
+    subcategory?: string;
+    confidence?: number;
+    keywords?: string[];
+    required_skills?: string[];
+    summary?: string;
+    status?: string;
+    error?: string;
+  };
+  priority_analysis: {
+    score: number;
+    level: string;
+    factors: {
+      severity: number;
+      urgency: number;
+      population_impact: number;
+      frequency: number;
+      feasibility: number;
+    };
+    explanation: string;
+  };
+  duplicate_analysis: {
+    status: string;
+    is_duplicate: boolean;
+    highest_similarity: number;
+    matched_challenge_id?: string;
+    candidates: Array<{
+      challenge_id: string;
+      title: string;
+      similarity: number;
+      confidence?: string;
+    }>;
+  };
+  university_match: {
+    score: number;
+    level: string;
+    factors: {
+      expertise_similarity: number;
+      skill_match: number;
+      previous_project_match: number;
+      infrastructure_match: number;
+      location_relevance: number;
+      availability: number;
+    };
+    matched_skills: string[];
+    missing_skills: string[];
+    matched_departments: string[];
+    matched_faculty: string[];
+    explanation: string;
+    university_id?: string;
+    university_name?: string;
+  } | null;
+  match_status: "evaluated" | "profile_incomplete" | "profile_not_found";
+  interest?: UniversityInterest | null;
+}
+
+export interface UniversityInterest {
+  id: string;
+  _id?: string;
+  challenge_id: string;
+  university_id: string;
+  status: "pending" | "accepted" | "rejected" | "withdrawn" | string;
+  message?: string | null;
+  created_at: string;
+  updated_at: string;
+  university_name?: string;
+  challenge_title?: string;
+  challenge_category?: string;
+  challenge_location?: any;
+  challenge_priority?: string;
+  challenge?: {
+    id: string;
+    title: string;
+    category: string;
+    location?: any;
+    status: string;
+    urgency?: string;
+  };
 }
 
 export interface Challenge {
