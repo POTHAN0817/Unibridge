@@ -1,6 +1,6 @@
 import { api } from "./api";
 import { mockChallenges } from "../data/mock/challenges";
-import { Challenge, ChallengeStatus, PriorityLevel } from "../types";
+import { Challenge, ChallengeImage, ChallengeStatus, PriorityLevel } from "../types";
 
 export interface BackendChallengeLocation {
   district?: string | null;
@@ -21,7 +21,13 @@ export interface BackendChallenge {
   status: string;
   created_at: string;
   updated_at: string;
+  image?: ChallengeImage | null;
+  affected_people?: number | null;
+  urgency?: string | null;
+  citizen_tags?: string[] | null;
   ai_analysis?: Record<string, any> | null;
+  duplicate_analysis?: any | null;
+  priority_analysis?: any | null;
   priority_score?: number | null;
   duplicate_of?: string | null;
   matched_universities?: string[] | null;
@@ -37,6 +43,10 @@ export interface CreateChallengeInput {
   category?: string | null;
   subcategory?: string | null;
   location?: BackendChallengeLocation | null;
+  photo?: File | null;
+  affected_people?: number | null;
+  urgency?: string | null;
+  citizen_tags?: string[] | null;
 }
 
 export function mapBackendChallengeToFrontend(b: BackendChallenge): Challenge {
@@ -64,32 +74,93 @@ export function mapBackendChallengeToFrontend(b: BackendChallenge): Challenge {
       })
     : "Recently";
 
+  // Derive priority level from priority_analysis level or priority_score
+  let derivedPriority: PriorityLevel = "MEDIUM";
+  const pLevel = b.priority_analysis?.level?.toUpperCase();
+  if (pLevel === "HIGH" || pLevel === "CRITICAL") derivedPriority = "HIGH";
+  else if (pLevel === "LOW") derivedPriority = "LOW";
+  else if (pLevel === "MEDIUM") derivedPriority = "MEDIUM";
+
+  // Real affected people display text
+  const affectedText = b.affected_people !== undefined && b.affected_people !== null
+    ? `${b.affected_people.toLocaleString()} citizens affected`
+    : "Local Community";
+
+  // Real tags combination
+  const combinedTags: string[] = [];
+  if (b.category) combinedTags.push(b.category);
+  if (b.subcategory) combinedTags.push(b.subcategory);
+  if (Array.isArray(b.citizen_tags)) {
+    b.citizen_tags.forEach((t) => {
+      if (t && !combinedTags.includes(t)) combinedTags.push(t);
+    });
+  }
+  if (combinedTags.length === 0) combinedTags.push("Civic Issue");
+
   return {
     id: b.id,
     title: b.title,
     description: b.description,
     category: b.category || "General",
+    subcategory: b.subcategory || undefined,
     location: locationStr,
     state: loc?.state || "",
     district: loc?.district || "",
     status: statusFormatted,
-    priority: "MEDIUM" as PriorityLevel,
-    priorityScore: b.priority_score ?? 0,
-    similarReports: 0,
+    priority: derivedPriority,
+    priorityScore: b.priority_score ?? b.priority_analysis?.score ?? 0,
+    similarReports: b.duplicate_analysis?.duplicate_count ?? 0,
     assignedUniversity: null,
     assignedProjectId: null,
     progress: statusFormatted === "Submitted" ? 15 : 30,
     stage: statusFormatted === "Submitted" ? "Submitted" : statusFormatted,
-    tags: [b.category || "Civic Issue"].filter(Boolean),
-    affectedPeople: "Local Community",
+    tags: combinedTags,
+    affectedPeople: affectedText,
+    affected_people: b.affected_people,
+    urgency: b.urgency || b.priority_analysis?.level || undefined,
+    citizen_tags: b.citizen_tags || [],
     submittedBy: "Citizen",
     submittedDate: createdDate,
+    image: b.image || null,
+    aiCategoryConfidence: b.ai_analysis?.confidence,
+    aiSummary: b.ai_analysis?.summary,
+    requiredExpertise: b.ai_analysis?.keywords || [],
+    ai_analysis: b.ai_analysis,
+    duplicate_analysis: b.duplicate_analysis,
+    priority_analysis: b.priority_analysis,
     timeline: [
       {
         event: "Challenge successfully submitted to UniBridge",
         time: createdDate,
         type: "neutral",
       },
+      ...(b.ai_analysis
+        ? [
+            {
+              event: `AI Problem Analysis completed (${b.category || "General"})`,
+              time: createdDate,
+              type: "ai" as const,
+            },
+          ]
+        : []),
+      ...(b.priority_analysis
+        ? [
+            {
+              event: `Priority computed: ${b.priority_analysis.score}/100 (${b.priority_analysis.level.toUpperCase()})`,
+              time: createdDate,
+              type: "info" as const,
+            },
+          ]
+        : []),
+      ...(b.duplicate_analysis?.is_duplicate
+        ? [
+            {
+              event: `Identified ${b.duplicate_analysis.duplicate_count} semantically similar community report(s)`,
+              time: createdDate,
+              type: "warning" as const,
+            },
+          ]
+        : []),
     ],
   };
 }
@@ -99,8 +170,9 @@ let challengesState: Challenge[] = [...mockChallenges];
 export const challengeService = {
   /**
    * Submit a new challenge to the FastAPI backend and store in MongoDB Atlas.
+   * Sends multipart/form-data to support optional photo upload.
    */
-  async createChallenge(input: CreateChallengeInput | Partial<Challenge>): Promise<Challenge> {
+  async createChallenge(input: CreateChallengeInput | (Partial<Challenge> & { photo?: File | null })): Promise<Challenge> {
     const title = input.title || "";
     const description = input.description || "";
     const category = input.category || null;
@@ -112,22 +184,38 @@ export const challengeService = {
     const address = locInput?.address || (input as any).village || (input as any).location || null;
     const latitude = locInput?.latitude || (input as any).latitude || null;
     const longitude = locInput?.longitude || (input as any).longitude || null;
+    const photo = (input as any).photo || null;
 
-    const payload = {
-      title,
-      description,
-      category,
-      subcategory,
-      location: {
-        district,
-        state,
-        latitude,
-        longitude,
-        address,
-      },
-    };
+    const affectedPeople = (input as any).affected_people !== undefined
+      ? (input as any).affected_people
+      : (input as any).affectedPeople;
+    const urgency = (input as any).urgency || null;
+    const citizenTags = (input as any).citizen_tags || (input as any).tags || null;
 
-    const response = await api.post<BackendChallenge>("/api/challenges", payload);
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("description", description);
+    if (category) formData.append("category", category);
+    if (subcategory) formData.append("subcategory", subcategory);
+    if (district) formData.append("district", district);
+    if (state) formData.append("state", state);
+    if (address) formData.append("address", address);
+    if (latitude !== null && latitude !== undefined) formData.append("latitude", String(latitude));
+    if (longitude !== null && longitude !== undefined) formData.append("longitude", String(longitude));
+    if (photo instanceof File) {
+      formData.append("photo", photo);
+    }
+    if (affectedPeople !== undefined && affectedPeople !== null && String(affectedPeople).trim() !== "") {
+      formData.append("affected_people", String(affectedPeople));
+    }
+    if (urgency) {
+      formData.append("urgency", String(urgency));
+    }
+    if (citizenTags) {
+      formData.append("citizen_tags", Array.isArray(citizenTags) ? JSON.stringify(citizenTags) : String(citizenTags));
+    }
+
+    const response = await api.post<BackendChallenge>("/api/challenges", formData);
     const mapped = mapBackendChallengeToFrontend(response);
 
     // Keep in local cache for immediate UI responsiveness
@@ -151,8 +239,8 @@ export const challengeService = {
       const response = await api.get<BackendChallenge>(`/api/challenges/${id}`);
       return mapBackendChallengeToFrontend(response);
     } catch {
-      // Fallback to local/mock challenges if viewing legacy mock item
-      return challengesState.find((c) => c.id === id) || null;
+      // Return null if not found in backend rather than presenting fake mock challenge
+      return null;
     }
   },
 

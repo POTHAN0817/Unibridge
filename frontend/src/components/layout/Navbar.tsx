@@ -15,7 +15,6 @@ export const roleNavigation: Record<UserRole, NavItemConfig[]> = {
     { label: "Dashboard", path: "/citizen/dashboard" },
     { label: "Report Challenge", path: "/citizen/report" },
     { label: "My Challenges", path: "/citizen/challenges" },
-    { label: "Impact", path: "/citizen/impact" },
     { label: "Profile", path: "/citizen/profile" },
   ],
   university: [
