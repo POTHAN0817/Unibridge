@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Link, NavLink, useNavigate, useLocation } from "lucide-react";
 import { Link as RouterLink, NavLink as RouterNavLink, useNavigate as useRouterNavigate, useLocation as useRouterLocation } from "react-router-dom";
 import { Zap, Bell, User, ChevronDown, LogOut, ShieldCheck, Menu, X, ArrowLeft } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext";
@@ -24,7 +23,6 @@ export const roleNavigation: Record<UserRole, NavItemConfig[]> = {
     { label: "Teams", path: "/university/teams" },
     { label: "Faculty", path: "/university/faculty" },
     { label: "Students", path: "/university/students" },
-    { label: "Impact", path: "/university/impact" },
     { label: "Profile", path: "/university/profile" },
   ],
   industry: [

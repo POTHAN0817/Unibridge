@@ -281,26 +281,68 @@ export default function CitizenChallengeDetails() {
                   <Building2 size={18} />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-purple-950">Matched Research Institution</h3>
+                  <h3 className="text-sm font-bold text-purple-950">Matched Research Institutions</h3>
                   <span className="text-xs text-purple-700">
-                    {challenge.assignedUniversity ? "Institution Assigned" : "Circulating to Accredited Colleges"}
+                    {challenge.university_matches?.matches && challenge.university_matches.matches.length > 0
+                      ? `${challenge.university_matches.matches.length} Institution Match(es)`
+                      : "Matching Pipeline Active"}
                   </span>
                 </div>
               </div>
 
-              {challenge.assignedUniversity ? (
-                <div>
-                  <p className="text-sm font-extrabold text-[#071A33] mb-1">
-                    {challenge.assignedUniversity}
-                  </p>
-                  <p className="text-xs text-gray-600 leading-relaxed mb-4">
-                    Student and faculty researchers have adopted this challenge and built an active engineering workspace.
-                  </p>
+              {challenge.university_matches?.matches && challenge.university_matches.matches.length > 0 ? (
+                <div className="space-y-4">
+                  {challenge.university_matches.matches.map((match, mIdx) => (
+                    <div
+                      key={mIdx}
+                      className="p-4 rounded-2xl bg-white border border-purple-200/80 shadow-2xs space-y-2.5"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className="text-sm font-bold text-[#071A33]">{match.university_name}</h4>
+                          <p className="text-[11px] text-gray-500">
+                            {[match.location?.city, match.location?.state].filter(Boolean).join(", ") || "India"}
+                          </p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <span className="text-xs font-extrabold px-2 py-0.5 rounded-lg bg-purple-100 text-purple-800">
+                            {match.score}/100
+                          </span>
+                          <div className="text-[10px] text-purple-600 font-semibold mt-0.5">{match.level}</div>
+                        </div>
+                      </div>
+
+                      {match.matched_skills && match.matched_skills.length > 0 && (
+                        <div>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase">Matched Expertise:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {match.matched_skills.map((sk, sIdx) => (
+                              <span
+                                key={sIdx}
+                                className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-100"
+                              >
+                                {sk}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {match.explanation && (
+                        <p className="text-[11px] text-gray-600 leading-relaxed pt-2 border-t border-gray-100 italic">
+                          "{match.explanation}"
+                        </p>
+                      )}
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <div>
-                  <p className="text-xs text-gray-600 leading-relaxed mb-3">
-                    Currently circulating across accredited colleges and state engineering departments for team adoption.
+                <div className="py-2">
+                  <p className="text-xs font-semibold text-gray-800 mb-1">
+                    No matching universities available yet.
+                  </p>
+                  <p className="text-xs text-gray-500 leading-relaxed mb-3">
+                    Universities will appear here once relevant departmental expertise, testing laboratories, and project capability profiles are available in MongoDB.
                   </p>
                   <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200 inline-block">
                     In Matching Queue
@@ -308,6 +350,7 @@ export default function CitizenChallengeDetails() {
                 </div>
               )}
             </div>
+
 
             {/* Impact Metric Box */}
             <div className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xs">

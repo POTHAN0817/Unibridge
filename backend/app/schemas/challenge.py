@@ -54,11 +54,13 @@ class ChallengeResponse(BaseModel):
     duplicate_analysis: Optional[dict[str, Any]] = None
     priority_analysis: Optional[dict[str, Any]] = None
     priority_score: Optional[float] = None
+    university_matches: Optional[dict[str, Any]] = None
 
-    # Future pipeline placeholders
+    # Pipeline linkage
     duplicate_of: Optional[str] = None
     matched_universities: Optional[list[str]] = None
     required_skills: Optional[list[str]] = None
     validation: Optional[dict[str, Any]] = None
     project: Optional[dict[str, Any]] = None
     impact: Optional[dict[str, Any]] = None
+

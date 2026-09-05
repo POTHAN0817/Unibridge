@@ -45,6 +45,7 @@ def serialize_challenge(doc: dict[str, Any]) -> dict[str, Any]:
         "duplicate_analysis": doc.get("duplicate_analysis"),
         "priority_analysis": doc.get("priority_analysis"),
         "priority_score": doc.get("priority_score"),
+        "university_matches": doc.get("university_matches"),
         "duplicate_of": doc.get("duplicate_of"),
         "matched_universities": doc.get("matched_universities"),
         "required_skills": doc.get("required_skills"),
@@ -53,6 +54,7 @@ def serialize_challenge(doc: dict[str, Any]) -> dict[str, Any]:
         "impact": doc.get("impact"),
         "image": doc.get("image"),
     }
+
 
 
 def create_challenge(
@@ -140,8 +142,10 @@ def update_challenge_full_ai(
     duplicate_analysis: Optional[dict[str, Any]] = None,
     priority_analysis: Optional[dict[str, Any]] = None,
     embedding: Optional[dict[str, Any]] = None,
+    university_matches: Optional[dict[str, Any]] = None,
     ai_status: str = "completed",
 ) -> Optional[dict[str, Any]]:
+
     """
     Atomically update a challenge document in MongoDB with full Phase 2A and Phase 2B outputs:
     - Phase 2A problem analysis (category, subcategory, skills, summary, keywords)
@@ -179,6 +183,12 @@ def update_challenge_full_ai(
         if "score" in priority_analysis:
             update_fields["priority_score"] = priority_analysis["score"]
 
+    if university_matches:
+        update_fields["university_matches"] = university_matches
+        if university_matches.get("matches"):
+            top_uni_ids = [m.get("university_id") for m in university_matches["matches"][:3] if m.get("university_id")]
+            update_fields["matched_universities"] = top_uni_ids
+
     if embedding:
         update_fields["embedding"] = embedding
 
@@ -186,6 +196,7 @@ def update_challenge_full_ai(
         {"_id": ObjectId(challenge_id)},
         {"$set": update_fields},
     )
+
 
     doc = challenges.find_one({"_id": ObjectId(challenge_id)})
     return serialize_challenge(doc) if doc else None

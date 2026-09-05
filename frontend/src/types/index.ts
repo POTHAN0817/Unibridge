@@ -70,6 +70,94 @@ export interface PriorityAnalysisResult {
   calculated_at?: string;
 }
 
+export interface UniversityDepartmentItem {
+  name: string;
+  description?: string;
+  expertise: string[];
+  skills: string[];
+}
+
+export interface UniversityFacultyItem {
+  name: string;
+  department?: string;
+  designation?: string;
+  email?: string;
+  phone?: string;
+  expertise: string[];
+  skills?: string[];
+  research_areas?: string[];
+}
+
+export interface UniversityProjectItem {
+  title: string;
+  description?: string;
+  domain?: string;
+  year?: number;
+}
+
+export interface UniversityProfile {
+  id?: string;
+  name: string;
+  short_name?: string;
+  description?: string;
+  website?: string;
+  location?: {
+    city?: string;
+    state?: string;
+    country?: string;
+  };
+  departments: UniversityDepartmentItem[];
+  research_areas: string[];
+  skills: string[];
+  infrastructure: string[];
+  previous_projects: UniversityProjectItem[];
+  faculty: UniversityFacultyItem[];
+  student_skills: string[];
+  availability: "available" | "limited" | "unavailable" | "unknown" | string;
+  created_by?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UniversityMatchFactors {
+  expertise_similarity: number;
+  skill_match: number;
+  previous_project_match: number;
+  infrastructure_match: number;
+  location_relevance: number;
+  availability: number;
+}
+
+export interface UniversityMatchCandidate {
+  university_id: string;
+  university_name: string;
+  short_name?: string;
+  location?: {
+    city?: string;
+    state?: string;
+    country?: string;
+  };
+  score: number;
+  level: "High Match" | "Good Match" | "Moderate Match" | "Low Match" | string;
+  factors: UniversityMatchFactors;
+  matched_skills: string[];
+  missing_skills: string[];
+  matched_departments: string[];
+  matched_faculty: string[];
+  relevant_projects: string[];
+  relevant_infrastructure: string[];
+  explanation: string;
+  model_version?: string;
+  calculated_at?: string;
+}
+
+export interface UniversityMatchesResult {
+  status: "completed" | "no_candidates" | "pending" | "failed" | string;
+  matches: UniversityMatchCandidate[];
+  model_version: string;
+  calculated_at?: string;
+}
+
 export interface Challenge {
   id: string;
   title: string;
@@ -101,12 +189,14 @@ export interface Challenge {
   ai_analysis?: any;
   duplicate_analysis?: DuplicateAnalysisResult | null;
   priority_analysis?: PriorityAnalysisResult | null;
+  university_matches?: UniversityMatchesResult | null;
   timeline?: {
     event: string;
     time: string;
     type: "success" | "info" | "ai" | "warning" | "neutral";
   }[];
 }
+
 
 
 export interface Project {

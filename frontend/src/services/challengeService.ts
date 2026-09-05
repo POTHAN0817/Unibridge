@@ -29,6 +29,7 @@ export interface BackendChallenge {
   duplicate_analysis?: any | null;
   priority_analysis?: any | null;
   priority_score?: number | null;
+  university_matches?: any | null;
   duplicate_of?: string | null;
   matched_universities?: string[] | null;
   required_skills?: string[] | null;
@@ -97,6 +98,9 @@ export function mapBackendChallengeToFrontend(b: BackendChallenge): Challenge {
   }
   if (combinedTags.length === 0) combinedTags.push("Civic Issue");
 
+  const topMatch = b.university_matches?.matches?.[0];
+  const assignedUni = topMatch ? topMatch.university_name : null;
+
   return {
     id: b.id,
     title: b.title,
@@ -110,7 +114,7 @@ export function mapBackendChallengeToFrontend(b: BackendChallenge): Challenge {
     priority: derivedPriority,
     priorityScore: b.priority_score ?? b.priority_analysis?.score ?? 0,
     similarReports: b.duplicate_analysis?.duplicate_count ?? 0,
-    assignedUniversity: null,
+    assignedUniversity: assignedUni,
     assignedProjectId: null,
     progress: statusFormatted === "Submitted" ? 15 : 30,
     stage: statusFormatted === "Submitted" ? "Submitted" : statusFormatted,
@@ -128,6 +132,7 @@ export function mapBackendChallengeToFrontend(b: BackendChallenge): Challenge {
     ai_analysis: b.ai_analysis,
     duplicate_analysis: b.duplicate_analysis,
     priority_analysis: b.priority_analysis,
+    university_matches: b.university_matches,
     timeline: [
       {
         event: "Challenge successfully submitted to UniBridge",
@@ -161,9 +166,19 @@ export function mapBackendChallengeToFrontend(b: BackendChallenge): Challenge {
             },
           ]
         : []),
+      ...(topMatch
+        ? [
+            {
+              event: `Matched with ${topMatch.university_name} (${topMatch.score}/100 - ${topMatch.level})`,
+              time: createdDate,
+              type: "info" as const,
+            },
+          ]
+        : []),
     ],
   };
 }
+
 
 let challengesState: Challenge[] = [...mockChallenges];
 

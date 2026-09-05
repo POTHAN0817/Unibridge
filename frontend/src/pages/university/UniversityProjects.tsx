@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Layers, ArrowRight, MapPin, Users, PlusCircle, CheckCircle2 } from "lucide-react";
-import { projectService } from "../../services/projectService";
 import { Project } from "../../types";
 import { DashboardHeader } from "../../components/dashboard/DashboardHeader";
 import { PageContainer } from "../../components/layout/PageContainer";
@@ -14,8 +13,9 @@ export default function UniversityProjects() {
 
   useEffect(() => {
     async function load() {
-      const data = await projectService.getAllProjects();
-      setProjects(data);
+      // Real backend does not have a projects collection yet.
+      // Do not show mock/fake datasets.
+      setProjects([]);
       setLoading(false);
     }
     load();
@@ -40,6 +40,24 @@ export default function UniversityProjects() {
       <PageContainer>
         {loading ? (
           <LoadingState message="Loading projects..." />
+        ) : projects.length === 0 ? (
+          <div className="bg-slate-50 border border-gray-200 rounded-3xl p-12 text-center max-w-xl mx-auto space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mx-auto">
+              <Layers size={24} />
+            </div>
+            <h3 className="text-base font-bold text-[#071A33]">No active university projects yet.</h3>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              When your departments adopt AI-matched civic challenges, dedicated multidisciplinary workspaces will appear here to track prototyping sprints, team milestones, and field deployments.
+            </p>
+            <div className="pt-2">
+              <Link
+                to="/university/challenges"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-xs"
+              >
+                Browse Matched Challenges <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {projects.map((proj) => (

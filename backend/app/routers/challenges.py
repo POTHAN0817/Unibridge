@@ -213,13 +213,43 @@ async def create_challenge_endpoint(
             ai_analysis=ai_res,
         )
 
-        # 4. Atomic Database Update for Full AI Output
+        # 4. Phase 3A Real University Matching
+        uni_matches_res = None
+        try:
+            from app.services import university_service
+            real_universities = university_service.get_all_universities()
+            from app.ai.university_matcher import get_university_matcher
+            uni_matcher = get_university_matcher()
+            # Construct ephemeral challenge dict for matching
+            ch_eval_dict = {
+                "id": str(challenge_id),
+                "title": challenge_title,
+                "description": challenge_desc,
+                "category": assigned_cat,
+                "subcategory": assigned_subcat,
+                "location": challenge_loc,
+                "ai_analysis": ai_res,
+            }
+            uni_matches_res = uni_matcher.match_all_universities(ch_eval_dict, real_universities)
+        except Exception as uni_err:
+            import traceback
+            traceback.print_exc()
+            logger.warning(f"University matching failed during challenge creation: {uni_err}")
+            uni_matches_res = {
+                "status": "no_candidates",
+                "matches": [],
+                "model_version": "unibridge-university-match-v1",
+                "calculated_at": None,
+            }
+
+        # 5. Atomic Database Update for Full AI Output
         updated = challenge_service.update_challenge_full_ai(
             challenge_id=str(challenge_id),
             ai_analysis=ai_res,
             duplicate_analysis=dup_res,
             priority_analysis=prio_res,
             embedding=emb_dict,
+            university_matches=uni_matches_res,
             ai_status="completed",
         )
         if updated:
@@ -232,6 +262,7 @@ async def create_challenge_endpoint(
             duplicate_analysis=None,
             priority_analysis=None,
             embedding=None,
+            university_matches=None,
             ai_status="failed",
         )
         if isinstance(new_challenge, dict):
@@ -265,6 +296,39 @@ def get_my_challenges_endpoint(
 
 
 @router.get(
+    "/{challenge_id}/university-matches",
+    summary="Get explainable university matches for a challenge",
+    description="Retrieves or calculates real university capability matches for the given challenge.",
+)
+def get_challenge_university_matches_endpoint(
+    challenge_id: str,
+    current_user: dict[str, Any] = Depends(get_current_user),
+):
+    """
+    Returns real university matches for a challenge.
+    Recalculates or retrieves stored matches from MongoDB.
+    """
+    challenge = challenge_service.get_challenge_by_id(challenge_id)
+    if not challenge:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Challenge not found.",
+        )
+
+    # Ownership enforcement for citizens
+    user_role = current_user.get("role")
+    user_id = str(current_user.get("id"))
+    if user_role == UserRole.CITIZEN.value and challenge.get("reported_by") != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Access denied: You cannot view matches for another citizen's private challenge.",
+        )
+
+    from app.services import university_service
+    return university_service.match_universities_for_challenge(challenge_id)
+
+
+@router.get(
     "/{challenge_id}",
     response_model=ChallengeResponse,
     summary="Get challenge details by ID",
@@ -295,3 +359,4 @@ def get_challenge_by_id_endpoint(
         )
 
     return challenge
+
