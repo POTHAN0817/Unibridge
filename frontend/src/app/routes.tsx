@@ -24,7 +24,6 @@ import CitizenDashboard from "../pages/citizen/CitizenDashboard";
 import ReportChallenge from "../pages/citizen/ReportChallenge";
 import CitizenChallenges from "../pages/citizen/CitizenChallenges";
 import CitizenChallengeDetails from "../pages/citizen/CitizenChallengeDetails";
-import CitizenImpact from "../pages/citizen/CitizenImpact";
 import CitizenProfile from "../pages/citizen/CitizenProfile";
 
 // University Pages
@@ -114,14 +113,6 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["citizen"]}>
               <CitizenChallengeDetails />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/citizen/impact"
-          element={
-            <ProtectedRoute allowedRoles={["citizen"]}>
-              <CitizenImpact />
             </ProtectedRoute>
           }
         />

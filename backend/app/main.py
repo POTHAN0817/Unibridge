@@ -4,6 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.mongodb import init_db_indexes, test_database_connection
+from app.database.taxonomy_db import seed_default_taxonomy_if_empty
 from app.routers.auth import router as auth_router
 from app.routers.challenges import router as challenges_router
 
@@ -17,7 +18,8 @@ async def lifespan(app: FastAPI):
     try:
         test_database_connection()
         init_db_indexes()
-        logger.info("MongoDB connection verified and indexes initialized.")
+        seed_default_taxonomy_if_empty()
+        logger.info("MongoDB connection verified, indexes initialized, and taxonomy ready.")
     except Exception as error:
         logger.error(f"Failed to initialize database: {error}")
     yield

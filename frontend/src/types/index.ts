@@ -29,11 +29,53 @@ export interface AuthUser {
 // UserProfile is an alias for AuthUser
 export type UserProfile = AuthUser;
 
+export interface ChallengeImage {
+  url: string;
+  public_id: string;
+  format?: string;
+  width?: number;
+  height?: number;
+}
+
+export interface DuplicateCandidate {
+  challenge_id: string;
+  title: string;
+  similarity_score: number;
+  category?: string;
+  district?: string;
+  state?: string;
+  created_at?: string;
+}
+
+export interface DuplicateAnalysisResult {
+  is_duplicate: boolean;
+  duplicate_candidates: DuplicateCandidate[];
+  duplicate_count: number;
+  highest_similarity: number;
+  action_recommended: "cluster" | "link" | "unique";
+}
+
+export interface PriorityFactorDetail {
+  weight: number;
+  raw_value: any;
+  normalized_score: number;
+  weighted_contribution: number;
+}
+
+export interface PriorityAnalysisResult {
+  score: number;
+  level: "low" | "medium" | "high";
+  explanation: string;
+  factors: Record<string, PriorityFactorDetail>;
+  calculated_at?: string;
+}
+
 export interface Challenge {
   id: string;
   title: string;
   description: string;
   category: string;
+  subcategory?: string;
   location: string;
   state: string;
   district: string;
@@ -47,18 +89,25 @@ export interface Challenge {
   stage: string;
   tags: string[];
   affectedPeople: string;
+  affected_people?: number | null;
+  urgency?: "low" | "medium" | "high" | string;
+  citizen_tags?: string[];
   submittedBy: string;
   submittedDate: string;
+  image?: ChallengeImage | null;
   aiCategoryConfidence?: number;
   aiSummary?: string;
   requiredExpertise?: string[];
-  urgency?: "low" | "medium" | "high";
+  ai_analysis?: any;
+  duplicate_analysis?: DuplicateAnalysisResult | null;
+  priority_analysis?: PriorityAnalysisResult | null;
   timeline?: {
     event: string;
     time: string;
     type: "success" | "info" | "ai" | "warning" | "neutral";
   }[];
 }
+
 
 export interface Project {
   id: string;

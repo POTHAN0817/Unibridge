@@ -21,7 +21,7 @@ import { StatCard } from "../../components/dashboard/StatCard";
 import { ActivityTimeline } from "../../components/dashboard/ActivityTimeline";
 import { StatusBadge } from "../../components/common/StatusBadge";
 import { PriorityBadge } from "../../components/common/PriorityBadge";
-import { mockActivities } from "../../data/mock/activity";
+
 
 export default function CitizenDashboard() {
   const { user } = useAuth();
@@ -200,6 +200,11 @@ export default function CitizenDashboard() {
                           </span>
                           <PriorityBadge priority={c.priority} />
                           <StatusBadge status={c.status} />
+                          {c.duplicate_analysis?.is_duplicate && (
+                            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                              {c.duplicate_analysis.duplicate_count} Similar Reports
+                            </span>
+                          )}
                         </div>
                         <h3 className="font-bold text-base text-[#071A33] group-hover:text-blue-600 transition-colors">
                           {c.title}
@@ -220,9 +225,23 @@ export default function CitizenDashboard() {
                       </div>
                     </div>
 
-                    <p className="text-xs text-gray-600 line-clamp-2 mb-3 leading-relaxed">
-                      {c.description}
-                    </p>
+                    <div className="flex flex-col sm:flex-row gap-4 mb-3">
+                      {c.image?.url && (
+                        <div className="w-full sm:w-24 h-24 rounded-xl overflow-hidden bg-slate-100 border border-gray-200 flex-shrink-0">
+                          <img
+                            src={c.image.url}
+                            alt={c.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-600 line-clamp-3 leading-relaxed">
+                          {c.description}
+                        </p>
+                      </div>
+                    </div>
 
                     <div className="flex flex-wrap gap-4 text-xs text-gray-500 mb-3">
                       <span className="flex items-center gap-1">
@@ -281,58 +300,24 @@ export default function CitizenDashboard() {
             )}
           </div>
 
-          {/* Right Column: Activity & Impact Preview */}
-
+          {/* Right Column: Activity & Community Info */}
           <div className="space-y-6">
             <ActivityTimeline
-              items={mockActivities.filter((a) => a.role === "citizen" || a.role === "university")}
-              title="Challenge Activity Timeline"
+              items={
+                challenges.length > 0
+                  ? challenges.flatMap((ch) =>
+                      (ch.timeline || []).map((tl, idx) => ({
+                        id: `${ch.id}-${idx}`,
+                        event: `${ch.title}: ${tl.event}`,
+                        time: tl.time,
+                        type: tl.type,
+                      }))
+                    ).slice(0, 8)
+                  : []
+              }
+              title="Recent Challenge Updates"
             />
 
-            {/* Impact Metric Box */}
-            <div className="rounded-2xl p-6 bg-emerald-50/70 border border-emerald-200">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="p-2 rounded-xl bg-emerald-100 text-emerald-700">
-                  <Eye size={18} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-emerald-950">Your Direct Community Impact</h3>
-                  <span className="text-xs text-emerald-700">Verified through university field trials</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-emerald-200/60">
-                <div>
-                  <div
-                    className="text-2xl font-extrabold text-emerald-700"
-                    style={{ fontFamily: "var(--font-display)" }}
-                  >
-                    4,500+
-                  </div>
-                  <div className="text-[11px] text-emerald-800/70 mt-0.5">
-                    People helped by your cold storage report
-                  </div>
-                </div>
-                <div>
-                  <div
-                    className="text-2xl font-extrabold text-emerald-700"
-                    style={{ fontFamily: "var(--font-display)" }}
-                  >
-                    94%
-                  </div>
-                  <div className="text-[11px] text-emerald-800/70 mt-0.5">
-                    Farmer satisfaction in Srivilliputhur pilot
-                  </div>
-                </div>
-              </div>
-
-              <Link
-                to="/citizen/impact"
-                className="mt-4 w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold text-emerald-800 bg-white hover:bg-emerald-100 border border-emerald-200 transition-colors"
-              >
-                View Complete Impact Story <ArrowRight size={13} />
-              </Link>
-            </div>
 
             {/* Support info card */}
             <div className="rounded-2xl p-6 bg-slate-50 border border-gray-200 text-center">

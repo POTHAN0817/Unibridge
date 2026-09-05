@@ -13,6 +13,7 @@ import {
   Building2,
   ShieldCheck,
   AlertCircle,
+  Image as ImageIcon,
 } from "lucide-react";
 import { challengeService } from "../../services/challengeService";
 import { Challenge } from "../../types";
@@ -54,14 +55,7 @@ export default function CitizenChallengeDetails() {
     );
   }
 
-  const priorityFactors = [
-    { label: "Community Severity", score: 18, max: 20 },
-    { label: "Population Affected", score: 19, max: 20 },
-    { label: "Urgency Multiplier", score: 17, max: 20 },
-    { label: "Semantic Duplication Cluster", score: 18, max: 20 },
-    { label: "Vulnerability Index", score: 10, max: 10 },
-    { label: "Academic Feasibility", score: 7, max: 10 },
-  ];
+
 
   return (
     <div className="min-h-screen bg-white">
@@ -104,6 +98,28 @@ export default function CitizenChallengeDetails() {
               </div>
             </div>
 
+            {/* Supporting Evidence Image Card */}
+            {challenge.image?.url && (
+              <div className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-xs">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="p-2 rounded-xl bg-blue-50 text-blue-600">
+                    <ImageIcon size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-[#071A33]">Supporting Photo Evidence</h3>
+                    <p className="text-xs text-gray-500">Field photo uploaded during challenge report</p>
+                  </div>
+                </div>
+                <div className="rounded-2xl overflow-hidden border border-gray-200 bg-slate-50 max-h-[480px]">
+                  <img
+                    src={challenge.image.url}
+                    alt={challenge.title}
+                    className="w-full h-full object-contain max-h-[480px] mx-auto"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* AI Diagnostics & Priority Breakdown */}
             <div className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-xs">
               <div className="flex items-center justify-between gap-2 mb-4">
@@ -113,35 +129,115 @@ export default function CitizenChallengeDetails() {
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-[#071A33]">CivicAI Priority Breakdown</h3>
-                    <p className="text-xs text-gray-500">Automated multi-factor evaluation</p>
+                    <p className="text-xs text-gray-500">
+                      {challenge.priority_analysis?.level
+                        ? `Level: ${challenge.priority_analysis.level.toUpperCase()} · Explainable 5-Factor Evaluation`
+                        : "Automated multi-factor evaluation"}
+                    </p>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <div className="text-3xl font-extrabold text-red-500">{challenge.priorityScore}</div>
+                  <div
+                    className="text-3xl font-extrabold"
+                    style={{
+                      color:
+                        challenge.priorityScore >= 70
+                          ? "#EF4444"
+                          : challenge.priorityScore >= 40
+                          ? "#F59E0B"
+                          : "#10B981",
+                    }}
+                  >
+                    {challenge.priorityScore}
+                  </div>
                   <div className="text-[10px] text-gray-400">Total Score / 100</div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-                {priorityFactors.map((factor, i) => (
-                  <div key={i} className="p-3.5 rounded-2xl bg-slate-50 border border-gray-100">
-                    <div className="flex justify-between text-xs font-semibold mb-1.5">
-                      <span className="text-gray-700">{factor.label}</span>
-                      <span className="text-blue-600">
-                        {factor.score}/{factor.max}
-                      </span>
+              {/* Real Priority Factors Breakdown */}
+              {challenge.priority_analysis?.factors ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                  {Object.entries(challenge.priority_analysis.factors).map(([key, f]) => {
+                    const labelMap: Record<string, string> = {
+                      severity: "Domain Severity (25%)",
+                      urgency: "Urgency Multiplier (20%)",
+                      population_impact: "Population Impact (20%)",
+                      frequency_duplicates: "Duplication Cluster (15%)",
+                      feasibility: "Academic Feasibility (20%)",
+                    };
+                    const title = labelMap[key] || key.replace(/_/g, " ").toUpperCase();
+                    return (
+                      <div key={key} className="p-3.5 rounded-2xl bg-slate-50 border border-gray-100">
+                        <div className="flex justify-between text-xs font-semibold mb-1.5">
+                          <span className="text-gray-700">{title}</span>
+                          <span className="text-blue-600">
+                            {Math.round(f.weighted_contribution)} pts
+                          </span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-blue-600"
+                            style={{ width: `${Math.min(100, Math.max(0, f.normalized_score))}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+                          <span>Raw: {String(f.raw_value ?? "N/A")}</span>
+                          <span>Norm: {Math.round(f.normalized_score)}/100</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+
+              {/* Real Factual Priority Explanation */}
+              {challenge.priority_analysis?.explanation && (
+                <div className="mt-4 p-4 rounded-2xl bg-slate-50 border border-gray-100 text-xs text-gray-600 leading-relaxed">
+                  <span className="font-bold text-gray-800">Scoring Rationale: </span>
+                  {challenge.priority_analysis.explanation}
+                </div>
+              )}
+            </div>
+
+            {/* Semantic Duplication Cluster Section */}
+            {challenge.duplicate_analysis?.duplicate_candidates &&
+              challenge.duplicate_analysis.duplicate_candidates.length > 0 && (
+                <div className="bg-white border border-amber-200 rounded-3xl p-6 sm:p-8 shadow-xs">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
+                      <ShieldCheck size={18} />
                     </div>
-                    <div className="h-1.5 rounded-full bg-gray-200 overflow-hidden">
-                      <div
-                        className="h-full rounded-full bg-blue-600"
-                        style={{ width: `${(factor.score / factor.max) * 100}%` }}
-                      />
+                    <div>
+                      <h3 className="text-base font-bold text-amber-950">
+                        Semantically Similar Reports ({challenge.duplicate_analysis.duplicate_count})
+                      </h3>
+                      <p className="text-xs text-amber-800/80">
+                        Highest similarity: {Math.round(challenge.duplicate_analysis.highest_similarity * 100)}%
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+
+                  <div className="space-y-3 mt-4">
+                    {challenge.duplicate_analysis.duplicate_candidates.map((cand, cIdx) => (
+                      <div
+                        key={cIdx}
+                        className="p-3 rounded-xl bg-amber-50/50 border border-amber-200/60 flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-gray-900 truncate">{cand.title}</p>
+                          <p className="text-[11px] text-gray-500 mt-0.5">
+                            {[cand.district, cand.state].filter(Boolean).join(", ") || "Location unlisted"}
+                          </p>
+                        </div>
+                        <span className="px-2.5 py-1 rounded-lg bg-white border border-amber-200 font-bold text-amber-800 flex-shrink-0">
+                          {Math.round(cand.similarity_score * 100)}% Match
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
             {/* Resolution Progress Bar & Stage */}
             <div className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-xs">
@@ -186,7 +282,9 @@ export default function CitizenChallengeDetails() {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-purple-950">Matched Research Institution</h3>
-                  <span className="text-xs text-purple-700">AI Compatibility: 94%</span>
+                  <span className="text-xs text-purple-700">
+                    {challenge.assignedUniversity ? "Institution Assigned" : "Circulating to Accredited Colleges"}
+                  </span>
                 </div>
               </div>
 
@@ -198,13 +296,6 @@ export default function CitizenChallengeDetails() {
                   <p className="text-xs text-gray-600 leading-relaxed mb-4">
                     Student and faculty researchers have adopted this challenge and built an active engineering workspace.
                   </p>
-
-                  <Link
-                    to="/university/projects/PRJ-2026-001"
-                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-xs"
-                  >
-                    View Project Workspace <ArrowRight size={14} />
-                  </Link>
                 </div>
               ) : (
                 <div>
@@ -234,11 +325,12 @@ export default function CitizenChallengeDetails() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-gray-500">Regional District</span>
-                  <span className="text-xs font-bold text-gray-900">{challenge.district}</span>
+                  <span className="text-xs font-bold text-gray-900">{challenge.district || "Not specified"}</span>
                 </div>
               </div>
             </div>
           </div>
+
         </div>
       </PageContainer>
     </div>
