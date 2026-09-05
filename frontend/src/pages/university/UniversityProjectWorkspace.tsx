@@ -40,7 +40,12 @@ export default function UniversityProjectWorkspace() {
 
   useEffect(() => {
     async function load() {
-      const p = await projectService.getProjectById(projectId || "PRJ-2026-001");
+      if (!projectId) {
+        setProject(null);
+        setLoading(false);
+        return;
+      }
+      const p = await projectService.getProjectById(projectId);
       setProject(p);
       setLoading(false);
     }
@@ -306,28 +311,12 @@ export default function UniversityProjectWorkspace() {
         {activeTab === "Field Documents" && (
           <div className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-4 max-w-3xl">
             <h3 className="text-base font-bold text-[#071A33]">Project Artifacts & Schematics</h3>
-            <div className="space-y-3">
-              {[
-                { title: "Solar Cold Chamber Thermal CAD Blueprint.dwg", size: "14.2 MB", date: "Aug 02, 2026" },
-                { title: "IoT Telemetry Firmware v1.4.bin", size: "1.8 MB", date: "Aug 22, 2026" },
-                { title: "Srivilliputhur Panchayat Pilot Site Permission.pdf", size: "420 KB", date: "Jul 28, 2026" },
-              ].map((doc, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 border border-gray-100">
-                  <div className="flex items-center gap-2.5">
-                    <FileText size={18} className="text-purple-600" />
-                    <div>
-                      <p className="text-xs font-bold text-gray-800">{doc.title}</p>
-                      <span className="text-[11px] text-gray-400">{doc.size} · {doc.date}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => alert(`Downloading ${doc.title}`)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100"
-                  >
-                    Download
-                  </button>
-                </div>
-              ))}
+            <div className="bg-slate-50 border border-gray-100 rounded-2xl p-8 text-center space-y-2">
+              <FileText size={24} className="text-purple-600 mx-auto" />
+              <h4 className="text-sm font-bold text-gray-900">No field documents uploaded yet</h4>
+              <p className="text-xs text-gray-500 leading-relaxed max-w-md mx-auto">
+                Lab schematics, engineering blueprints, firmware binaries, and municipal pilot site permissions will appear here once uploaded by the project team.
+              </p>
             </div>
           </div>
         )}

@@ -15,6 +15,11 @@ from app.ai.priority_engine import (
     calculate_priority,
     get_priority_engine,
 )
+from app.ai.university_matcher import (
+    UniversityMatcher,
+    get_university_matcher,
+    normalize_term,
+)
 
 __all__ = [
     "ProblemAnalyzer",
@@ -28,5 +33,9 @@ __all__ = [
     "PriorityEngine",
     "calculate_priority",
     "get_priority_engine",
+    "UniversityMatcher",
+    "get_university_matcher",
+    "normalize_term",
 ]
+
 

@@ -1,47 +1,32 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { DashboardHeader } from "../../components/dashboard/DashboardHeader";
 import { PageContainer } from "../../components/layout/PageContainer";
-import { Users, Award, Code, Cpu, BookOpen } from "lucide-react";
+import { LoadingState } from "../../components/common/LoadingState";
+import { Users, Award, Code, ArrowRight, Sparkles } from "lucide-react";
+import { universityService } from "../../services/universityService";
+import { UniversityProfile } from "../../types";
 
 export default function UniversityStudents() {
-  const students = [
-    {
-      name: "Aarav Krishnan",
-      year: "Final Year B.Tech",
-      branch: "IoT & Embedded Engineering",
-      role: "Lead Student Researcher",
-      project: "Smart Cold Chain for Rural Farmers",
-      skills: ["Embedded C", "ESP32", "LoRaWAN", "Circuit Design"],
-      badge: "Lead Researcher",
-    },
-    {
-      name: "Priya Venkat",
-      year: "3rd Year B.Tech",
-      branch: "Computer Science & Data",
-      role: "Sensor Telemetry & Dashboard",
-      project: "AI Water Quality Monitoring",
-      skills: ["React", "Python FastApi", "MQTT", "Time Series Analysis"],
-      badge: "Software Lead",
-    },
-    {
-      name: "Rahul Mohan",
-      year: "Final Year B.Tech",
-      branch: "Mechanical Engineering",
-      role: "Thermal Chamber CAD & CFD",
-      project: "Smart Cold Chain for Rural Farmers",
-      skills: ["SolidWorks", "ANSYS Thermal", "HVAC Design"],
-      badge: "CAD Specialist",
-    },
-    {
-      name: "Kavya Sridhar",
-      year: "3rd Year B.Tech",
-      branch: "Industrial Biotechnology",
-      role: "Produce Spoilage Assay",
-      project: "Smart Cold Chain for Rural Farmers",
-      skills: ["Crop Shelf-life Testing", "Bacterial Counts", "Post-Harvest"],
-      badge: "Field Trialist",
-    },
-  ];
+  const [profile, setProfile] = useState<UniversityProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      setLoading(true);
+      try {
+        const data = await universityService.getMyProfile();
+        setProfile(data);
+      } catch (err) {
+        console.error("Failed to load student profiles:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    load();
+  }, []);
+
+  const studentSkills = profile?.student_skills || [];
 
   return (
     <div className="min-h-screen bg-white">
@@ -53,36 +38,61 @@ export default function UniversityStudents() {
       />
 
       <PageContainer>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          {students.map((s, idx) => (
-            <div key={idx} className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold text-sm mb-3">
-                  {s.name[0]}
+        {loading ? (
+          <LoadingState message="Loading student research corps..." />
+        ) : (
+          <div className="space-y-8">
+            {/* Student Skills from Institutional Profile */}
+            {studentSkills.length > 0 && (
+              <div className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-xs">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles size={18} className="text-purple-600" />
+                  <h3 className="text-base font-bold text-[#071A33]">
+                    Registered Student Technical Competencies ({studentSkills.length})
+                  </h3>
                 </div>
-                <h4 className="text-base font-bold text-[#071A33]">{s.name}</h4>
-                <p className="text-xs text-purple-600 font-semibold">{s.role}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">{s.branch} · {s.year}</p>
-
-                <div className="mt-3 pt-3 border-t border-gray-100">
-                  <span className="text-[10px] uppercase font-bold text-gray-400 block mb-1">Assigned Solution</span>
-                  <p className="text-xs font-semibold text-gray-800 line-clamp-1">{s.project}</p>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-gray-100">
-                <span className="text-[10px] uppercase font-bold text-gray-400 block mb-1.5">Skill Matrix</span>
-                <div className="flex flex-wrap gap-1">
-                  {s.skills.map((skill, i) => (
-                    <span key={i} className="text-[10px] bg-slate-100 text-gray-600 px-2 py-0.5 rounded">
+                <p className="text-xs text-gray-500 mb-4">
+                  Domain skills and technical capabilities registered in your institutional profile for student researchers.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {studentSkills.map((skill, idx) => (
+                    <span
+                      key={idx}
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-100"
+                    >
                       {skill}
                     </span>
                   ))}
                 </div>
               </div>
+            )}
+
+            {/* Empty State for Student Cohorts */}
+            <div className="bg-slate-50 border border-gray-200 rounded-3xl p-12 text-center max-w-xl mx-auto space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mx-auto">
+                <Users size={24} />
+              </div>
+              <h3 className="text-base font-bold text-[#071A33]">No student researchers assigned yet.</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Student research cohorts and innovators are formed when your departments adopt verified civic challenges. You can configure expected student skill competencies in your Institutional Profile.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                <Link
+                  to="/university/challenges"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-xs"
+                >
+                  Browse Matched Challenges <ArrowRight size={14} />
+                </Link>
+                <Link
+                  to="/university/profile"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors"
+                >
+                  Configure Student Skills
+                </Link>
+              </div>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </PageContainer>
     </div>
   );

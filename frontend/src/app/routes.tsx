@@ -35,7 +35,6 @@ import UniversityProjectWorkspace from "../pages/university/UniversityProjectWor
 import UniversityTeams from "../pages/university/UniversityTeams";
 import UniversityFaculty from "../pages/university/UniversityFaculty";
 import UniversityStudents from "../pages/university/UniversityStudents";
-import UniversityImpact from "../pages/university/UniversityImpact";
 import UniversityProfile from "../pages/university/UniversityProfile";
 
 // Industry Pages
@@ -187,14 +186,6 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["university"]}>
               <UniversityStudents />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/university/impact"
-          element={
-            <ProtectedRoute allowedRoles={["university"]}>
-              <UniversityImpact />
             </ProtectedRoute>
           }
         />

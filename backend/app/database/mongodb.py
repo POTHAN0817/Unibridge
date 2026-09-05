@@ -28,6 +28,10 @@ def get_challenges_collection():
     return db["challenges"]
 
 
+def get_universities_collection():
+    return db["universities"]
+
+
 def init_db_indexes():
     """
     Safely initialize required database indexes during startup.
@@ -39,6 +43,12 @@ def init_db_indexes():
     challenges.create_index("reported_by")
     challenges.create_index([("created_at", -1)])
     challenges.create_index("status")
+
+    universities = get_universities_collection()
+    universities.create_index("created_by", unique=True)
+    universities.create_index("location.state")
+    universities.create_index("location.city")
+
 
 
 def test_database_connection():
