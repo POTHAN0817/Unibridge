@@ -790,3 +790,637 @@ export interface ActivityItem {
   role?: UserRole;
   link?: string;
 }
+
+export interface IndustryProfile {
+  id: string;
+  _id?: string;
+  user_id: string;
+  company_name: string;
+  short_name?: string | null;
+  description?: string | null;
+  website?: string | null;
+  industry_sector: string;
+  sub_sectors: string[];
+  headquarters_location?: string | null;
+  operating_locations: string[];
+  expertise: string[];
+  technologies: string[];
+  capabilities: string[];
+  infrastructure: string[];
+  resources_available: string[];
+  research_interests: string[];
+  collaboration_interests: string[];
+  funding_capacity?: string | null;
+  mentorship_capacity?: string | null;
+  availability: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IndustryProfileCreateInput {
+  company_name: string;
+  short_name?: string;
+  description?: string;
+  website?: string;
+  industry_sector: string;
+  sub_sectors?: string[];
+  headquarters_location?: string;
+  operating_locations?: string[];
+  expertise?: string[];
+  technologies?: string[];
+  capabilities?: string[];
+  infrastructure?: string[];
+  resources_available?: string[];
+  research_interests?: string[];
+  collaboration_interests?: string[];
+  funding_capacity?: string;
+  mentorship_capacity?: string;
+  availability?: string;
+}
+
+export interface IndustryProfileUpdateInput {
+  company_name?: string;
+  short_name?: string;
+  description?: string;
+  website?: string;
+  industry_sector?: string;
+  sub_sectors?: string[];
+  headquarters_location?: string;
+  operating_locations?: string[];
+  expertise?: string[];
+  technologies?: string[];
+  capabilities?: string[];
+  infrastructure?: string[];
+  resources_available?: string[];
+  research_interests?: string[];
+  collaboration_interests?: string[];
+  funding_capacity?: string;
+  mentorship_capacity?: string;
+  availability?: string;
+}
+
+export interface IndustryDiscoveredProjectSummary {
+  project_id: string;
+  project_name: string;
+  description?: string | null;
+  project_status: string;
+  challenge_id: string;
+  challenge_title: string;
+  challenge_category: string;
+  challenge_subcategory?: string | null;
+  challenge_location?: string | null;
+  university_id: string;
+  university_name: string;
+  team_name: string;
+  faculty_count: number;
+  student_count: number;
+  project_start_date?: string | null;
+  target_date?: string | null;
+}
+
+export interface IndustryDiscoveredProjectsPage {
+  items: IndustryDiscoveredProjectSummary[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export interface IndustryProjectMilestoneSummary {
+  id: string;
+  title: string;
+  description?: string | null;
+  status: string;
+  due_date?: string | null;
+  completed_at?: string | null;
+}
+
+export interface IndustryProjectSolutionSummary {
+  title: string;
+  problem_statement: string;
+  proposed_solution: string;
+  technical_approach?: string | null;
+  expected_outcomes?: string | null;
+  status: string;
+}
+
+export interface IndustryProjectPrototypeSummary {
+  id: string;
+  version: string;
+  title: string;
+  description?: string | null;
+  status: string;
+  artifact_url?: string | null;
+  artifact_type?: string | null;
+}
+
+export interface IndustryProjectPilotSummary {
+  id: string;
+  title: string;
+  location: string;
+  objectives: string;
+  status: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  observations?: string | null;
+  results?: string | null;
+}
+
+export interface IndustryDiscoveredProjectDetail {
+  project_id: string;
+  project_name: string;
+  description?: string | null;
+  project_status: string;
+  start_date?: string | null;
+  target_date?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+
+  // Linked Challenge
+  challenge_id: string;
+  challenge_title: string;
+  challenge_description?: string | null;
+  challenge_category: string;
+  challenge_subcategory?: string | null;
+  challenge_location?: string | null;
+  challenge_urgency?: string | null;
+
+  // University & Team
+  university_id: string;
+  university_name: string;
+  team_name: string;
+  faculty_count: number;
+  student_count: number;
+
+  // Progress & Milestones
+  milestone_progress: number;
+  milestones_count: number;
+  completed_milestones_count: number;
+  milestones: IndustryProjectMilestoneSummary[];
+
+  // Solution Proposal
+  solution?: IndustryProjectSolutionSummary | null;
+
+  // Prototypes & Pilots
+  prototypes: IndustryProjectPrototypeSummary[];
+  pilots: IndustryProjectPilotSummary[];
+}
+
+export type PartnershipStatus = "pending" | "accepted" | "rejected" | "withdrawn";
+
+export interface IndustryPartnership {
+  id: string;
+  industry_user_id: string;
+  project_id: string;
+  university_id: string;
+  status: PartnershipStatus;
+  message?: string | null;
+  created_at: string;
+  updated_at: string;
+
+  // Context fields for display
+  project_name?: string;
+  university_name?: string;
+  challenge_title?: string;
+  challenge_category?: string;
+}
+
+export interface UniversityPartnershipRequest {
+  id: string;
+  industry_user_id: string;
+  project_id: string;
+  university_id: string;
+  status: PartnershipStatus;
+  message?: string | null;
+  created_at: string;
+  updated_at: string;
+
+  // Enriched corporate details
+  company_name: string;
+  short_name?: string | null;
+  industry_sector: string;
+  sub_sectors: string[];
+  expertise: string[];
+  technologies: string[];
+  capabilities: string[];
+  collaboration_interests: string[];
+  headquarters_location?: string | null;
+  website?: string | null;
+}
+
+export interface IndustryExpert {
+  id: string;
+  industry_user_id: string;
+  name: string;
+  designation: string;
+  email: string;
+  expertise: string[];
+  skills: string[];
+  domain_areas: string[];
+  availability: "available" | "limited" | "unavailable" | string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface IndustryExpertCreateInput {
+  name: string;
+  designation: string;
+  email: string;
+  expertise?: string[];
+  skills?: string[];
+  domain_areas?: string[];
+  availability?: string;
+}
+
+export interface IndustryExpertUpdateInput {
+  name?: string;
+  designation?: string;
+  email?: string;
+  expertise?: string[];
+  skills?: string[];
+  domain_areas?: string[];
+  availability?: string;
+}
+
+export type MentorshipStatus = "proposed" | "active" | "completed" | "withdrawn";
+
+export interface ProjectMentorship {
+  id: string;
+  project_id: string;
+  university_id: string;
+  industry_user_id: string;
+  expert_id: string;
+  partnership_id: string;
+  status: MentorshipStatus;
+  focus_areas: string[];
+  objectives: string;
+  created_at: string;
+  updated_at: string;
+
+  // Context fields for display
+  expert_name?: string;
+  expert_designation?: string;
+  expert_email?: string;
+  expert_expertise?: string[];
+  expert_skills?: string[];
+  skills?: string[];
+  company_name?: string;
+  project_name?: string;
+  university_name?: string;
+}
+
+export interface ProjectMentorshipCreateInput {
+  expert_id: string;
+  focus_areas?: string[];
+  objectives: string;
+}
+
+export interface ProjectMentorshipUpdateInput {
+  status?: MentorshipStatus;
+  focus_areas?: string[];
+  objectives?: string;
+}
+
+export interface IndustryDashboardMetrics {
+  discovered_projects: number;
+  pending_partnerships: number;
+  active_partnerships: number;
+  active_mentorships: number;
+  supported_projects: number;
+  resources_contributed?: number;
+  funding_proposals?: number;
+  active_collaborations?: number;
+}
+
+export interface UniversityIndustryCollaborationMetrics {
+  projects_with_partnerships: number;
+  pending_requests: number;
+  pending_partnership_requests?: number;
+  active_partnerships: number;
+  accepted_partnerships?: number;
+  active_mentors: number;
+  resource_contributions?: number;
+  funding_proposals?: number;
+}
+
+// ============================================================================
+// Resources & Technology Support
+// ============================================================================
+export type ResourceType =
+  | "technology"
+  | "equipment"
+  | "software"
+  | "dataset"
+  | "infrastructure"
+  | "technical_service"
+  | "other";
+
+export type ResourceStatus = "proposed" | "approved" | "rejected" | "provided" | "withdrawn";
+
+export interface IndustryResource {
+  id: string;
+  project_id: string;
+  university_id: string;
+  industry_user_id: string;
+  partnership_id: string;
+  title: string;
+  resource_type: ResourceType | string;
+  description: string;
+  quantity_or_scope?: string | null;
+  status: ResourceStatus;
+  provided_at?: string | null;
+  created_at: string;
+  updated_at: string;
+
+  // Context fields
+  company_name?: string;
+  industry_sector?: string;
+  project_name?: string;
+  university_name?: string;
+}
+
+export interface IndustryResourceCreateInput {
+  title: string;
+  resource_type: ResourceType;
+  description: string;
+  quantity_or_scope?: string;
+}
+
+export interface IndustryResourceUpdateInput {
+  title?: string;
+  resource_type?: ResourceType;
+  description?: string;
+  quantity_or_scope?: string;
+  status?: ResourceStatus;
+}
+
+// ============================================================================
+// Funding / Sponsorship Proposals
+// ============================================================================
+export type FundingType = "sponsorship" | "grant" | "project_support" | "csr" | "other";
+
+export type FundingStatus = "proposed" | "approved" | "rejected" | "withdrawn" | "disbursed";
+
+export interface IndustryFunding {
+  id: string;
+  project_id: string;
+  university_id: string;
+  industry_user_id: string;
+  partnership_id: string;
+  title: string;
+  description: string;
+  amount: number;
+  currency: string;
+  funding_type: FundingType | string;
+  status: FundingStatus;
+  proposed_at: string;
+  updated_at: string;
+
+  // Context fields
+  company_name?: string;
+  industry_sector?: string;
+  project_name?: string;
+  university_name?: string;
+}
+
+export interface IndustryFundingCreateInput {
+  title: string;
+  description: string;
+  amount: number;
+  currency?: string;
+  funding_type: FundingType;
+}
+
+export interface IndustryFundingUpdateInput {
+  title?: string;
+  description?: string;
+  amount?: number;
+  currency?: string;
+  funding_type?: FundingType;
+  status?: FundingStatus;
+}
+
+// ============================================================================
+// Collaboration Summary
+// ============================================================================
+export interface IndustryCollaborationSummary {
+  project_id: string;
+  project_name: string;
+  university_id: string;
+  university_name: string;
+  project_status: string;
+  partnership_status: string;
+  assigned_mentors_count: number;
+  resources_count: number;
+  funding_proposals_count: number;
+}
+
+// ============================================================================
+// Government Module (Step 8A Foundation)
+// ============================================================================
+export type JurisdictionLevel = "national" | "state" | "district" | "city" | "local";
+
+export interface GovernmentProfile {
+  id: string;
+  user_id: string;
+  department_name: string;
+  department_type: string;
+  designation: string;
+  jurisdiction: string;
+  jurisdiction_level: JurisdictionLevel;
+  state?: string;
+  district?: string;
+  city?: string;
+  official_email: string;
+  phone?: string;
+  description?: string;
+  areas_of_focus: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GovernmentProfileCreateInput {
+  department_name: string;
+  department_type: string;
+  designation: string;
+  jurisdiction: string;
+  jurisdiction_level: JurisdictionLevel;
+  state?: string;
+  district?: string;
+  city?: string;
+  official_email: string;
+  phone?: string;
+  description?: string;
+  areas_of_focus: string[];
+}
+
+export interface GovernmentProfileUpdateInput {
+  department_name?: string;
+  department_type?: string;
+  designation?: string;
+  jurisdiction?: string;
+  jurisdiction_level?: JurisdictionLevel;
+  state?: string;
+  district?: string;
+  city?: string;
+  official_email?: string;
+  phone?: string;
+  description?: string;
+  areas_of_focus?: string[];
+}
+
+export interface GovernmentDashboardMetrics {
+  total_challenges: number;
+  submitted_challenges: number;
+  ai_processed_challenges: number;
+  validated_challenges: number;
+  total_university_projects: number;
+  active_university_projects: number;
+  pilot_projects: number;
+  deployed_projects: number;
+  total_industry_partnerships: number;
+  accepted_industry_partnerships: number;
+  active_mentorships: number;
+  resource_contributions: number;
+  funding_proposals: number;
+}
+
+export interface PlatformActivityItem {
+  id: string;
+  project_id: string;
+  action: string;
+  description: string;
+  created_at: string;
+}
+
+// ============================================================================
+// Step 8B: Government Challenge Monitoring & Validation Types
+// ============================================================================
+
+export type GovernmentReviewDecision = "pending" | "validated" | "rejected" | "clarification_required";
+
+export interface GovernmentChallengeReview {
+  id: string;
+  challenge_id: string;
+  government_user_id: string;
+  decision: GovernmentReviewDecision;
+  review_note?: string | null;
+  clarification_request?: string | null;
+  reviewed_at: string;
+  created_at: string;
+  updated_at: string;
+  officer_name?: string | null;
+  department_name?: string | null;
+}
+
+export interface GovernmentChallengeReviewCreateInput {
+  decision: GovernmentReviewDecision;
+  review_note?: string | null;
+  clarification_request?: string | null;
+}
+
+export interface GovernmentChallengeReviewUpdateInput {
+  decision?: GovernmentReviewDecision;
+  review_note?: string | null;
+  clarification_request?: string | null;
+}
+
+export interface GovernmentChallengeSummary {
+  challenge_id: string;
+  title: string;
+  description: string;
+  category?: string | null;
+  subcategory?: string | null;
+  location?: {
+    district?: string;
+    state?: string;
+    latitude?: number;
+    longitude?: number;
+    address?: string;
+  } | null;
+  submitted_at: string;
+  status: string;
+  ai_status?: string | null;
+  affected_people?: number | null;
+  urgency?: string | null;
+  citizen_tags?: string[];
+  ai_category?: string | null;
+  ai_confidence?: number | null;
+  keywords: string[];
+  required_skills: string[];
+  priority_score?: number | null;
+  priority_level?: string | null;
+  priority_explanation?: string | null;
+  duplicate_status?: string | null;
+  highest_similarity?: number | null;
+  matched_challenge_id?: string | null;
+  government_review?: GovernmentChallengeReview | null;
+  government_review_decision: GovernmentReviewDecision;
+  government_review_date?: string | null;
+  has_project: boolean;
+  project_name?: string | null;
+  project_status?: string | null;
+  university_name?: string | null;
+}
+
+export interface GovernmentChallengesSummaryCounts {
+  total: number;
+  pending: number;
+  validated: number;
+  clarification_required: number;
+  rejected: number;
+}
+
+export interface GovernmentChallengesPage {
+  items: GovernmentChallengeSummary[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  summary_counts: GovernmentChallengesSummaryCounts;
+}
+
+export interface GovernmentProjectRelationship {
+  project_id: string;
+  project_name: string;
+  status: string;
+  university_id: string;
+  university_name?: string | null;
+  team_id?: string | null;
+  team_name?: string | null;
+  lifecycle_stage?: string | null;
+  start_date?: string | null;
+  target_date?: string | null;
+}
+
+export interface GovernmentChallengeDetail {
+  challenge_id: string;
+  title: string;
+  description: string;
+  category?: string | null;
+  subcategory?: string | null;
+  location?: {
+    district?: string;
+    state?: string;
+    latitude?: number;
+    longitude?: number;
+    address?: string;
+  } | null;
+  affected_people?: number | null;
+  urgency?: string | null;
+  citizen_tags?: string[];
+  created_at: string;
+  updated_at: string;
+  challenge_status: string;
+  image_url?: string | null;
+  ai_analysis?: Record<string, any> | null;
+  duplicate_analysis?: Record<string, any> | null;
+  priority_analysis?: Record<string, any> | null;
+  project_relationship?: GovernmentProjectRelationship | null;
+  government_review?: GovernmentChallengeReview | null;
+}
+
+
+
+
+

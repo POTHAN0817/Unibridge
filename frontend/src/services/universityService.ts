@@ -34,6 +34,12 @@ import {
   DeploymentReadinessUpdateInput,
   ProjectActivity,
   Challenge,
+  UniversityPartnershipRequest,
+  IndustryPartnership,
+  ProjectMentorship,
+  UniversityIndustryCollaborationMetrics,
+  IndustryResource,
+  IndustryFunding,
 } from "../types";
 import { mapBackendChallengeToFrontend, BackendChallenge } from "./challengeService";
 
@@ -435,6 +441,63 @@ export const universityService = {
   async getProjectActivity(projectId: string): Promise<ProjectActivity[]> {
     return await api.get<ProjectActivity[]>(`/api/universities/projects/${projectId}/activity`);
   },
+
+  // =========================================================================
+  // Part 10: Industry Partnerships & Mentorships API
+  // =========================================================================
+
+  async getProjectPartnerships(projectId: string): Promise<UniversityPartnershipRequest[]> {
+    return await api.get<UniversityPartnershipRequest[]>(`/api/universities/projects/${projectId}/partnerships`);
+  },
+
+  async acceptPartnership(partnershipId: string): Promise<IndustryPartnership> {
+    return await api.put<IndustryPartnership>(`/api/universities/partnerships/${partnershipId}/accept`);
+  },
+
+  async rejectPartnership(partnershipId: string): Promise<IndustryPartnership> {
+    return await api.put<IndustryPartnership>(`/api/universities/partnerships/${partnershipId}/reject`);
+  },
+
+  async getProjectMentorships(projectId: string): Promise<ProjectMentorship[]> {
+    return await api.get<ProjectMentorship[]>(`/api/universities/projects/${projectId}/mentorships`);
+  },
+
+  async getIndustryCollaborationMetrics(): Promise<UniversityIndustryCollaborationMetrics> {
+    return await api.get<UniversityIndustryCollaborationMetrics>("/api/universities/industry-collaboration/metrics");
+  },
+
+  // =========================================================================
+  // Part 11: Industry Resources Support API (University)
+  // =========================================================================
+
+  async getProjectIndustryResources(projectId: string): Promise<IndustryResource[]> {
+    return await api.get<IndustryResource[]>(`/api/universities/projects/${projectId}/industry-resources`);
+  },
+
+  async approveIndustryResource(resourceId: string): Promise<{ id: string; status: string }> {
+    return await api.put<{ id: string; status: string }>(`/api/universities/industry-resources/${resourceId}/approve`);
+  },
+
+  async rejectIndustryResource(resourceId: string): Promise<{ id: string; status: string }> {
+    return await api.put<{ id: string; status: string }>(`/api/universities/industry-resources/${resourceId}/reject`);
+  },
+
+  // =========================================================================
+  // Part 12: Industry Funding & Sponsorship Proposals API (University)
+  // =========================================================================
+
+  async getProjectIndustryFunding(projectId: string): Promise<IndustryFunding[]> {
+    return await api.get<IndustryFunding[]>(`/api/universities/projects/${projectId}/industry-funding`);
+  },
+
+  async approveIndustryFunding(fundingId: string): Promise<{ id: string; status: string }> {
+    return await api.put<{ id: string; status: string }>(`/api/universities/industry-funding/${fundingId}/approve`);
+  },
+
+  async rejectIndustryFunding(fundingId: string): Promise<{ id: string; status: string }> {
+    return await api.put<{ id: string; status: string }>(`/api/universities/industry-funding/${fundingId}/reject`);
+  },
 };
+
 
 

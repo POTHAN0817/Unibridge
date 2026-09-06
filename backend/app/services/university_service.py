@@ -19,6 +19,12 @@ from app.database.mongodb import (
     get_project_pilots_collection,
     get_project_deployment_readiness_collection,
     get_project_activity_collection,
+    get_industry_partnerships_collection,
+    get_industry_profiles_collection,
+    get_industry_experts_collection,
+    get_project_mentorships_collection,
+    get_project_industry_resources_collection,
+    get_project_industry_funding_collection,
 )
 from app.schemas.university import (
     UniversityProfileCreate,
@@ -2957,6 +2963,548 @@ def get_project_activity(user_id: str, project_id: str) -> List[Dict[str, Any]]:
         }
         for d in docs
     ]
+
+
+# -----------------------------------------------------------------------------
+# Part 10: Industry Partnerships & Mentorships (University Perspective)
+# -----------------------------------------------------------------------------
+
+def get_project_partnerships(user_id: str, project_id: str) -> List[Dict[str, Any]]:
+    """
+    Retrieve incoming industry partnership requests for a project owned by the authenticated university.
+    Strictly verifies server-side project ownership.
+    Enriches with sanitized industry corporate profile for university evaluation.
+    """
+    uni_id, _ = _verify_project_ownership(user_id, project_id)
+    part_coll = get_industry_partnerships_collection()
+    prof_coll = get_industry_profiles_collection()
+
+    records = list(part_coll.find({
+        "project_id": str(project_id),
+        "university_id": str(uni_id),
+    }).sort("created_at", -1))
+
+    result: List[Dict[str, Any]] = []
+    for r in records:
+        ind_uid = str(r.get("industry_user_id", ""))
+        prof = prof_coll.find_one({"user_id": ind_uid})
+
+        comp_name = "Industry Partner"
+        s_name = None
+        sector = "Corporate Enterprise"
+        sub_s: List[str] = []
+        exp: List[str] = []
+        tech: List[str] = []
+        cap: List[str] = []
+        collab_int: List[str] = []
+        hq = None
+        web = None
+
+        if prof:
+            comp_name = prof.get("company_name", comp_name)
+            s_name = prof.get("short_name")
+            sector = prof.get("industry_sector", sector)
+            sub_s = prof.get("sub_sectors", [])
+            exp = prof.get("expertise", [])
+            tech = prof.get("technologies", [])
+            cap = prof.get("capabilities", [])
+            collab_int = prof.get("collaboration_interests", [])
+            hq = prof.get("headquarters_location")
+            web = prof.get("website")
+
+        item = {
+            "id": str(r["_id"]),
+            "industry_user_id": ind_uid,
+            "project_id": str(r.get("project_id")),
+            "university_id": str(r.get("university_id")),
+            "status": r.get("status", "pending"),
+            "message": r.get("message"),
+            "created_at": r.get("created_at", ""),
+            "updated_at": r.get("updated_at", ""),
+            "company_name": comp_name,
+            "short_name": s_name,
+            "industry_sector": sector,
+            "sub_sectors": sub_s,
+            "expertise": exp,
+            "technologies": tech,
+            "capabilities": cap,
+            "collaboration_interests": collab_int,
+            "headquarters_location": hq,
+            "website": web,
+        }
+        result.append(item)
+
+    return result
+
+
+def accept_partnership(user_id: str, partnership_id: str) -> Dict[str, Any]:
+    """
+    Accept an incoming industry partnership request.
+    Server verifies project ownership strictly before modifying partnership status.
+    """
+    if not partnership_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Partnership ID required.")
+
+    try:
+        p_obj = ObjectId(partnership_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid partnership ID.")
+
+    part_coll = get_industry_partnerships_collection()
+    doc = part_coll.find_one({"_id": p_obj})
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Partnership request not found.")
+
+    pid = str(doc.get("project_id"))
+    uni_id, _ = _verify_project_ownership(user_id, pid)
+
+    now = datetime.now(timezone.utc).isoformat()
+    part_coll.update_one({"_id": p_obj}, {"$set": {"status": "accepted", "updated_at": now}})
+    updated = part_coll.find_one({"_id": p_obj})
+
+    # Find company name for activity logging
+    prof_coll = get_industry_profiles_collection()
+    prof = prof_coll.find_one({"user_id": str(doc.get("industry_user_id"))})
+    comp_name = prof.get("company_name", "Industry Partner") if prof else "Industry Partner"
+
+    _log_project_activity(
+        project_id=pid,
+        university_id=str(uni_id),
+        actor_id=str(user_id),
+        action="partnership_interest_accepted",
+        description=f"University accepted partnership interest from industry partner '{comp_name}'.",
+    )
+
+    return {
+        "id": str(updated["_id"]),
+        "industry_user_id": str(updated.get("industry_user_id")),
+        "project_id": str(updated.get("project_id")),
+        "university_id": str(updated.get("university_id")),
+        "status": updated.get("status"),
+        "message": updated.get("message"),
+        "created_at": updated.get("created_at"),
+        "updated_at": updated.get("updated_at"),
+    }
+
+
+def reject_partnership(user_id: str, partnership_id: str) -> Dict[str, Any]:
+    """
+    Reject an incoming industry partnership request.
+    Server verifies project ownership strictly before modifying partnership status.
+    """
+    if not partnership_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Partnership ID required.")
+
+    try:
+        p_obj = ObjectId(partnership_id)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid partnership ID.")
+
+    part_coll = get_industry_partnerships_collection()
+    doc = part_coll.find_one({"_id": p_obj})
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Partnership request not found.")
+
+    pid = str(doc.get("project_id"))
+    uni_id, _ = _verify_project_ownership(user_id, pid)
+
+    now = datetime.now(timezone.utc).isoformat()
+    part_coll.update_one({"_id": p_obj}, {"$set": {"status": "rejected", "updated_at": now}})
+    updated = part_coll.find_one({"_id": p_obj})
+
+    prof_coll = get_industry_profiles_collection()
+    prof = prof_coll.find_one({"user_id": str(doc.get("industry_user_id"))})
+    comp_name = prof.get("company_name", "Industry Partner") if prof else "Industry Partner"
+
+    _log_project_activity(
+        project_id=pid,
+        university_id=str(uni_id),
+        actor_id=str(user_id),
+        action="partnership_interest_rejected",
+        description=f"University declined partnership interest from industry partner '{comp_name}'.",
+    )
+
+    return {
+        "id": str(updated["_id"]),
+        "industry_user_id": str(updated.get("industry_user_id")),
+        "project_id": str(updated.get("project_id")),
+        "university_id": str(updated.get("university_id")),
+        "status": updated.get("status"),
+        "message": updated.get("message"),
+        "created_at": updated.get("created_at"),
+        "updated_at": updated.get("updated_at"),
+    }
+
+
+def get_project_mentorships_for_university(user_id: str, project_id: str) -> List[Dict[str, Any]]:
+    """
+    Retrieve all proposed, active, and completed technical mentorships on a project owned by the university.
+    Enriches with corporate expert profile details and corporate partner identity.
+    """
+    uni_id, _ = _verify_project_ownership(user_id, project_id)
+    m_coll = get_project_mentorships_collection()
+    exp_coll = get_industry_experts_collection()
+    prof_coll = get_industry_profiles_collection()
+
+    records = list(m_coll.find({
+        "project_id": str(project_id),
+        "university_id": str(uni_id),
+    }).sort("created_at", -1))
+
+    result: List[Dict[str, Any]] = []
+    for m in records:
+        exp_id = str(m.get("expert_id", ""))
+        ind_uid = str(m.get("industry_user_id", ""))
+
+        exp_name = "Technical Advisor"
+        exp_desig = "Industry Specialist"
+        exp_exp: List[str] = []
+        exp_skills: List[str] = []
+
+        try:
+            exp_doc = exp_coll.find_one({"_id": ObjectId(exp_id)})
+            if exp_doc:
+                exp_name = exp_doc.get("name", exp_name)
+                exp_desig = exp_doc.get("designation", exp_desig)
+                exp_exp = exp_doc.get("expertise", [])
+                exp_skills = exp_doc.get("skills", [])
+        except Exception:
+            pass
+
+        comp_name = "Industry Partner"
+        try:
+            p_doc = prof_coll.find_one({"user_id": ind_uid})
+            if p_doc:
+                comp_name = p_doc.get("company_name", comp_name)
+        except Exception:
+            pass
+
+        item = {
+            "id": str(m["_id"]),
+            "project_id": str(m.get("project_id")),
+            "university_id": str(m.get("university_id")),
+            "industry_user_id": ind_uid,
+            "expert_id": exp_id,
+            "partnership_id": str(m.get("partnership_id")),
+            "status": m.get("status", "proposed"),
+            "focus_areas": m.get("focus_areas", []),
+            "objectives": m.get("objectives", ""),
+            "created_at": m.get("created_at", ""),
+            "updated_at": m.get("updated_at", ""),
+            "expert_name": exp_name,
+            "expert_designation": exp_desig,
+            "expert_expertise": exp_exp,
+            "expert_skills": exp_skills,
+            "company_name": comp_name,
+        }
+        result.append(item)
+
+    return result
+
+
+def get_university_industry_collaboration_stats(user_id: str) -> Dict[str, Any]:
+    """
+    Compute real statistics for the university on incoming industry partnerships and active mentors.
+    """
+    uni_id = _resolve_university_id(user_id)
+    p_coll = get_university_projects_collection()
+    part_coll = get_industry_partnerships_collection()
+    m_coll = get_project_mentorships_collection()
+
+    projects = list(p_coll.find({"university_id": str(uni_id)}))
+    p_ids = [str(p["_id"]) for p in projects]
+
+    if not p_ids:
+        return {
+            "projects_with_partnerships": 0,
+            "pending_requests": 0,
+            "active_partnerships": 0,
+            "active_mentors": 0,
+            "resource_contributions": 0,
+            "funding_proposals": 0,
+        }
+
+    partnerships = list(part_coll.find({"project_id": {"$in": p_ids}}))
+    pending_count = sum(1 for p in partnerships if p.get("status") == "pending")
+    active_count = sum(1 for p in partnerships if p.get("status") == "accepted")
+    accepted_p_ids = set(str(p["project_id"]) for p in partnerships if p.get("status") == "accepted")
+
+    active_mentors_count = m_coll.count_documents({
+        "university_id": str(uni_id),
+        "status": "active",
+    })
+
+    res_coll = get_project_industry_resources_collection()
+    fund_coll = get_project_industry_funding_collection()
+    res_count = res_coll.count_documents({
+        "university_id": str(uni_id),
+        "status": {"$in": ["proposed", "approved", "provided"]},
+    })
+    fund_count = fund_coll.count_documents({
+        "university_id": str(uni_id),
+        "status": {"$in": ["proposed", "approved"]},
+    })
+
+    return {
+        "projects_with_partnerships": len(accepted_p_ids),
+        "pending_requests": pending_count,
+        "active_partnerships": active_count,
+        "active_mentors": active_mentors_count,
+        "resource_contributions": res_count,
+        "funding_proposals": fund_count,
+    }
+
+
+# =============================================================================
+# UNIVERSITY: INDUSTRY RESOURCES MANAGEMENT
+# =============================================================================
+
+def get_project_industry_resources(user_id: str, project_id: str) -> List[Dict[str, Any]]:
+    """
+    Get all industry resource contributions for a project owned by the university.
+    """
+    uni_id = _resolve_university_id(user_id)
+    _validate_project_ownership(user_id, project_id)
+
+    r_coll = get_project_industry_resources_collection()
+    prof_coll = get_industry_profiles_collection()
+
+    docs = list(r_coll.find({"project_id": str(project_id)}).sort("created_at", -1))
+    result: List[Dict[str, Any]] = []
+
+    for d in docs:
+        ind_uid = str(d.get("industry_user_id", ""))
+        comp_name = "Industry Partner"
+        ind_sec = ""
+        try:
+            p_doc = prof_coll.find_one({"user_id": ind_uid})
+            if p_doc:
+                comp_name = p_doc.get("company_name", comp_name)
+                ind_sec = p_doc.get("industry_sector", "")
+        except Exception:
+            pass
+
+        item = {
+            "id": str(d["_id"]),
+            "project_id": str(d.get("project_id")),
+            "university_id": str(d.get("university_id")),
+            "industry_user_id": ind_uid,
+            "partnership_id": str(d.get("partnership_id")),
+            "title": d.get("title", ""),
+            "resource_type": d.get("resource_type", "other"),
+            "description": d.get("description", ""),
+            "quantity_or_scope": d.get("quantity_or_scope"),
+            "status": d.get("status", "proposed"),
+            "provided_at": d.get("provided_at"),
+            "created_at": d.get("created_at", ""),
+            "updated_at": d.get("updated_at", ""),
+            "company_name": comp_name,
+            "industry_sector": ind_sec,
+        }
+        result.append(item)
+
+    return result
+
+
+def approve_industry_resource(user_id: str, resource_id: str) -> Dict[str, Any]:
+    """
+    Approve an incoming industry resource contribution for the university's project.
+    """
+    uni_id = _resolve_university_id(user_id)
+    try:
+        r_obj = ObjectId(resource_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid resource ID format.")
+
+    r_coll = get_project_industry_resources_collection()
+    doc = r_coll.find_one({"_id": r_obj})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Resource contribution not found.")
+
+    # Validate that this university owns the project
+    proj_id = str(doc.get("project_id"))
+    _validate_project_ownership(user_id, proj_id)
+
+    now = datetime.now(timezone.utc).isoformat()
+    r_coll.update_one({"_id": r_obj}, {"$set": {"status": "approved", "updated_at": now}})
+
+    _log_project_activity(
+        project_id=proj_id,
+        university_id=str(uni_id),
+        actor_id=user_id,
+        action="resource_approved",
+        description=f"University approved industry resource: '{doc.get('title')}'.",
+    )
+
+    updated = r_coll.find_one({"_id": r_obj})
+    return {
+        "id": str(updated["_id"]),
+        "status": updated.get("status"),
+        "updated_at": updated.get("updated_at"),
+    }
+
+
+def reject_industry_resource(user_id: str, resource_id: str) -> Dict[str, Any]:
+    """
+    Decline an incoming industry resource contribution.
+    """
+    uni_id = _resolve_university_id(user_id)
+    try:
+        r_obj = ObjectId(resource_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid resource ID format.")
+
+    r_coll = get_project_industry_resources_collection()
+    doc = r_coll.find_one({"_id": r_obj})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Resource contribution not found.")
+
+    proj_id = str(doc.get("project_id"))
+    _validate_project_ownership(user_id, proj_id)
+
+    now = datetime.now(timezone.utc).isoformat()
+    r_coll.update_one({"_id": r_obj}, {"$set": {"status": "rejected", "updated_at": now}})
+
+    _log_project_activity(
+        project_id=proj_id,
+        university_id=str(uni_id),
+        actor_id=user_id,
+        action="resource_rejected",
+        description=f"University declined industry resource proposal: '{doc.get('title')}'.",
+    )
+
+    updated = r_coll.find_one({"_id": r_obj})
+    return {
+        "id": str(updated["_id"]),
+        "status": updated.get("status"),
+        "updated_at": updated.get("updated_at"),
+    }
+
+
+# =============================================================================
+# UNIVERSITY: INDUSTRY FUNDING MANAGEMENT
+# =============================================================================
+
+def get_project_industry_funding(user_id: str, project_id: str) -> List[Dict[str, Any]]:
+    """
+    Get all industry funding proposals for a project owned by the university.
+    """
+    uni_id = _resolve_university_id(user_id)
+    _validate_project_ownership(user_id, project_id)
+
+    f_coll = get_project_industry_funding_collection()
+    prof_coll = get_industry_profiles_collection()
+
+    docs = list(f_coll.find({"project_id": str(project_id)}).sort("proposed_at", -1))
+    result: List[Dict[str, Any]] = []
+
+    for d in docs:
+        ind_uid = str(d.get("industry_user_id", ""))
+        comp_name = "Industry Partner"
+        ind_sec = ""
+        try:
+            p_doc = prof_coll.find_one({"user_id": ind_uid})
+            if p_doc:
+                comp_name = p_doc.get("company_name", comp_name)
+                ind_sec = p_doc.get("industry_sector", "")
+        except Exception:
+            pass
+
+        item = {
+            "id": str(d["_id"]),
+            "project_id": str(d.get("project_id")),
+            "university_id": str(d.get("university_id")),
+            "industry_user_id": ind_uid,
+            "partnership_id": str(d.get("partnership_id")),
+            "title": d.get("title", ""),
+            "description": d.get("description", ""),
+            "amount": float(d.get("amount", 0.0)),
+            "currency": d.get("currency", "INR"),
+            "funding_type": d.get("funding_type", "sponsorship"),
+            "status": d.get("status", "proposed"),
+            "proposed_at": d.get("proposed_at", ""),
+            "updated_at": d.get("updated_at", ""),
+            "company_name": comp_name,
+            "industry_sector": ind_sec,
+        }
+        result.append(item)
+
+    return result
+
+
+def approve_industry_funding(user_id: str, funding_id: str) -> Dict[str, Any]:
+    """
+    Approve an incoming funding/sponsorship proposal.
+    """
+    uni_id = _resolve_university_id(user_id)
+    try:
+        f_obj = ObjectId(funding_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid funding ID format.")
+
+    f_coll = get_project_industry_funding_collection()
+    doc = f_coll.find_one({"_id": f_obj})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Funding proposal not found.")
+
+    proj_id = str(doc.get("project_id"))
+    _validate_project_ownership(user_id, proj_id)
+
+    now = datetime.now(timezone.utc).isoformat()
+    f_coll.update_one({"_id": f_obj}, {"$set": {"status": "approved", "updated_at": now}})
+
+    _log_project_activity(
+        project_id=proj_id,
+        university_id=str(uni_id),
+        actor_id=user_id,
+        action="funding_approved",
+        description=f"University approved funding proposal: '{doc.get('title')}' ({doc.get('currency')} {float(doc.get('amount', 0)):,.2f}).",
+    )
+
+    updated = f_coll.find_one({"_id": f_obj})
+    return {
+        "id": str(updated["_id"]),
+        "status": updated.get("status"),
+        "updated_at": updated.get("updated_at"),
+    }
+
+
+def reject_industry_funding(user_id: str, funding_id: str) -> Dict[str, Any]:
+    """
+    Decline an incoming funding/sponsorship proposal.
+    """
+    uni_id = _resolve_university_id(user_id)
+    try:
+        f_obj = ObjectId(funding_id)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid funding ID format.")
+
+    f_coll = get_project_industry_funding_collection()
+    doc = f_coll.find_one({"_id": f_obj})
+    if not doc:
+        raise HTTPException(status_code=404, detail="Funding proposal not found.")
+
+    proj_id = str(doc.get("project_id"))
+    _validate_project_ownership(user_id, proj_id)
+
+    now = datetime.now(timezone.utc).isoformat()
+    f_coll.update_one({"_id": f_obj}, {"$set": {"status": "rejected", "updated_at": now}})
+
+    _log_project_activity(
+        project_id=proj_id,
+        university_id=str(uni_id),
+        actor_id=user_id,
+        action="funding_rejected",
+        description=f"University declined funding proposal: '{doc.get('title')}'.",
+    )
+
+    updated = f_coll.find_one({"_id": f_obj})
+    return {
+        "id": str(updated["_id"]),
+        "status": updated.get("status"),
+        "updated_at": updated.get("updated_at"),
+    }
+
 
 
 

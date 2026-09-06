@@ -41,6 +41,13 @@ from app.schemas.university import (
     DeploymentReadinessResponse,
     ProjectActivityResponse,
 )
+from app.schemas.industry import (
+    UniversityPartnershipItem,
+    IndustryPartnershipResponse,
+    ProjectMentorshipResponse,
+    IndustryResourceResponse,
+    IndustryFundingResponse,
+)
 from app.services import university_service, cloudinary_service
 
 logger = logging.getLogger("unibridge.universities_router")
@@ -983,6 +990,155 @@ def get_project_activity_endpoint(
 ):
     user_id = current_user.get("id")
     return university_service.get_project_activity(str(user_id), project_id)
+
+
+# =============================================================================
+# PART 10: INDUSTRY PARTNERSHIP & MENTORSHIP ENDPOINTS (UNIVERSITY)
+# =============================================================================
+
+@router.get(
+    "/projects/{project_id}/partnerships",
+    response_model=List[UniversityPartnershipItem],
+    summary="List incoming industry partnership requests for a university project",
+)
+def get_project_partnerships_endpoint(
+    project_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_project_partnerships(str(user_id), project_id)
+
+
+@router.put(
+    "/partnerships/{partnership_id}/accept",
+    response_model=IndustryPartnershipResponse,
+    summary="Accept an incoming industry partnership request",
+)
+def accept_partnership_endpoint(
+    partnership_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.accept_partnership(str(user_id), partnership_id)
+
+
+@router.put(
+    "/partnerships/{partnership_id}/reject",
+    response_model=IndustryPartnershipResponse,
+    summary="Reject an incoming industry partnership request",
+)
+def reject_partnership_endpoint(
+    partnership_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.reject_partnership(str(user_id), partnership_id)
+
+
+@router.get(
+    "/projects/{project_id}/mentorships",
+    response_model=List[ProjectMentorshipResponse],
+    summary="List industry technical mentors connected to a university project",
+)
+def get_project_mentorships_endpoint(
+    project_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_project_mentorships_for_university(str(user_id), project_id)
+
+
+@router.get(
+    "/industry-collaboration/metrics",
+    summary="Get summary metrics of industry collaboration for the university",
+)
+def get_university_industry_collaboration_metrics_endpoint(
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_university_industry_collaboration_stats(str(user_id))
+
+
+# =============================================================================
+# PART 11: INDUSTRY RESOURCES (UNIVERSITY)
+# =============================================================================
+
+@router.get(
+    "/projects/{project_id}/industry-resources",
+    response_model=List[IndustryResourceResponse],
+    summary="Get industry resource contributions for a project",
+)
+def get_project_industry_resources_endpoint(
+    project_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_project_industry_resources(str(user_id), project_id)
+
+
+@router.put(
+    "/industry-resources/{resource_id}/approve",
+    summary="Approve an industry resource contribution",
+)
+def approve_industry_resource_endpoint(
+    resource_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.approve_industry_resource(str(user_id), resource_id)
+
+
+@router.put(
+    "/industry-resources/{resource_id}/reject",
+    summary="Decline an industry resource contribution",
+)
+def reject_industry_resource_endpoint(
+    resource_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.reject_industry_resource(str(user_id), resource_id)
+
+
+# =============================================================================
+# PART 12: INDUSTRY FUNDING (UNIVERSITY)
+# =============================================================================
+
+@router.get(
+    "/projects/{project_id}/industry-funding",
+    response_model=List[IndustryFundingResponse],
+    summary="Get industry funding proposals for a project",
+)
+def get_project_industry_funding_endpoint(
+    project_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_project_industry_funding(str(user_id), project_id)
+
+
+@router.put(
+    "/industry-funding/{funding_id}/approve",
+    summary="Approve an industry funding proposal",
+)
+def approve_industry_funding_endpoint(
+    funding_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.approve_industry_funding(str(user_id), funding_id)
+
+
+@router.put(
+    "/industry-funding/{funding_id}/reject",
+    summary="Decline an industry funding proposal",
+)
+def reject_industry_funding_endpoint(
+    funding_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.reject_industry_funding(str(user_id), funding_id)
 
 
 @router.get(

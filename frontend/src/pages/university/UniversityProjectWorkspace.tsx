@@ -30,6 +30,9 @@ import {
   BookOpen,
   HelpCircle,
   FileCheck,
+  Handshake,
+  Package,
+  DollarSign,
 } from "lucide-react";
 import {
   UniversityProject,
@@ -46,6 +49,10 @@ import {
   PrototypeStatus,
   PilotStatus,
   ReadinessStatus,
+  UniversityPartnershipRequest,
+  ProjectMentorship,
+  IndustryResource,
+  IndustryFunding,
 } from "../../types";
 import { universityService } from "../../services/universityService";
 import { DashboardHeader } from "../../components/dashboard/DashboardHeader";
@@ -70,6 +77,10 @@ const WORKSPACE_TABS = [
   "Prototypes",
   "Pilots",
   "Deployment Readiness",
+  "Industry Partnerships",
+  "Industry Mentors",
+  "Industry Resources",
+  "Industry Funding",
   "Activity",
 ] as const;
 
@@ -131,6 +142,8 @@ export default function UniversityProjectWorkspace() {
   const [pilots, setPilots] = useState<ProjectPilot[]>([]);
   const [readiness, setReadiness] = useState<DeploymentReadiness | null>(null);
   const [activityLog, setActivityLog] = useState<ProjectActivity[]>([]);
+  const [partnerships, setPartnerships] = useState<UniversityPartnershipRequest[]>([]);
+  const [mentors, setMentors] = useState<ProjectMentorship[]>([]);
 
   // Feedback Toast
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -200,6 +213,9 @@ export default function UniversityProjectWorkspace() {
   const [blockers, setBlockers] = useState("");
   const [notes, setNotes] = useState("");
 
+  const [resources, setResources] = useState<IndustryResource[]>([]);
+  const [funding, setFunding] = useState<IndustryFunding[]>([]);
+
   const [actionLoading, setActionLoading] = useState(false);
 
   // Load all project workspace data
@@ -210,7 +226,7 @@ export default function UniversityProjectWorkspace() {
       const proj = await universityService.getProjectById(projectId);
       setProject(proj);
 
-      const [mList, rList, sol, pList, piList, read, act] = await Promise.all([
+      const [mList, rList, sol, pList, piList, read, act, parts, mntrs, resList, fundList] = await Promise.all([
         universityService.getMilestones(projectId).catch(() => []),
         universityService.getResearchList(projectId).catch(() => []),
         universityService.getSolution(projectId).catch(() => null),
@@ -218,6 +234,10 @@ export default function UniversityProjectWorkspace() {
         universityService.getPilotList(projectId).catch(() => []),
         universityService.getDeploymentReadiness(projectId).catch(() => null),
         universityService.getProjectActivity(projectId).catch(() => []),
+        universityService.getProjectPartnerships(projectId).catch(() => []),
+        universityService.getProjectMentorships(projectId).catch(() => []),
+        universityService.getProjectIndustryResources(projectId).catch(() => []),
+        universityService.getProjectIndustryFunding(projectId).catch(() => []),
       ]);
 
       setMilestones(mList);
@@ -227,10 +247,113 @@ export default function UniversityProjectWorkspace() {
       setPilots(piList);
       setReadiness(read);
       setActivityLog(act);
+      setPartnerships(parts || []);
+      setMentors(mntrs || []);
+      setResources(resList || []);
+      setFunding(fundList || []);
     } catch (err: any) {
       triggerFeedback("error", err?.response?.data?.detail || "Could not load project workspace.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleAcceptPartnership(partnershipId: string) {
+    if (!projectId) return;
+    try {
+      await universityService.acceptPartnership(partnershipId);
+      triggerFeedback("success", "Industry partnership accepted! The partner can now assign technical mentors.");
+      const [parts, act] = await Promise.all([
+        universityService.getProjectPartnerships(projectId),
+        universityService.getProjectActivity(projectId),
+      ]);
+      setPartnerships(parts);
+      setActivityLog(act);
+    } catch (err: any) {
+      triggerFeedback("error", err?.response?.data?.detail || "Failed to accept partnership.");
+    }
+  }
+
+  async function handleRejectPartnership(partnershipId: string) {
+    if (!projectId) return;
+    if (!window.confirm("Are you sure you want to decline this industry partnership request?")) return;
+    try {
+      await universityService.rejectPartnership(partnershipId);
+      triggerFeedback("success", "Industry partnership request declined.");
+      const [parts, act] = await Promise.all([
+        universityService.getProjectPartnerships(projectId),
+        universityService.getProjectActivity(projectId),
+      ]);
+      setPartnerships(parts);
+      setActivityLog(act);
+    } catch (err: any) {
+      triggerFeedback("error", err?.response?.data?.detail || "Failed to decline partnership.");
+    }
+  }
+
+  async function handleApproveResource(resourceId: string) {
+    if (!projectId) return;
+    try {
+      await universityService.approveIndustryResource(resourceId);
+      triggerFeedback("success", "Resource contribution approved!");
+      const [resList, act] = await Promise.all([
+        universityService.getProjectIndustryResources(projectId),
+        universityService.getProjectActivity(projectId),
+      ]);
+      setResources(resList || []);
+      setActivityLog(act);
+    } catch (err: any) {
+      triggerFeedback("error", err?.response?.data?.detail || "Failed to approve resource contribution.");
+    }
+  }
+
+  async function handleRejectResource(resourceId: string) {
+    if (!projectId) return;
+    if (!window.confirm("Are you sure you want to decline this resource contribution?")) return;
+    try {
+      await universityService.rejectIndustryResource(resourceId);
+      triggerFeedback("success", "Resource contribution rejected.");
+      const [resList, act] = await Promise.all([
+        universityService.getProjectIndustryResources(projectId),
+        universityService.getProjectActivity(projectId),
+      ]);
+      setResources(resList || []);
+      setActivityLog(act);
+    } catch (err: any) {
+      triggerFeedback("error", err?.response?.data?.detail || "Failed to reject resource contribution.");
+    }
+  }
+
+  async function handleApproveFunding(fundingId: string) {
+    if (!projectId) return;
+    try {
+      await universityService.approveIndustryFunding(fundingId);
+      triggerFeedback("success", "Funding proposal approved!");
+      const [fundList, act] = await Promise.all([
+        universityService.getProjectIndustryFunding(projectId),
+        universityService.getProjectActivity(projectId),
+      ]);
+      setFunding(fundList || []);
+      setActivityLog(act);
+    } catch (err: any) {
+      triggerFeedback("error", err?.response?.data?.detail || "Failed to approve funding proposal.");
+    }
+  }
+
+  async function handleRejectFunding(fundingId: string) {
+    if (!projectId) return;
+    if (!window.confirm("Are you sure you want to decline this funding proposal?")) return;
+    try {
+      await universityService.rejectIndustryFunding(fundingId);
+      triggerFeedback("success", "Funding proposal rejected.");
+      const [fundList, act] = await Promise.all([
+        universityService.getProjectIndustryFunding(projectId),
+        universityService.getProjectActivity(projectId),
+      ]);
+      setFunding(fundList || []);
+      setActivityLog(act);
+    } catch (err: any) {
+      triggerFeedback("error", err?.response?.data?.detail || "Failed to reject funding proposal.");
     }
   }
 
@@ -846,6 +969,10 @@ export default function UniversityProjectWorkspace() {
               {tab === "Research" && researchList.length > 0 && ` (${researchList.length})`}
               {tab === "Prototypes" && prototypes.length > 0 && ` (${prototypes.length})`}
               {tab === "Pilots" && pilots.length > 0 && ` (${pilots.length})`}
+              {tab === "Industry Partnerships" && partnerships.length > 0 && ` (${partnerships.length})`}
+              {tab === "Industry Mentors" && mentors.length > 0 && ` (${mentors.length})`}
+              {tab === "Industry Resources" && resources.length > 0 && ` (${resources.length})`}
+              {tab === "Industry Funding" && funding.length > 0 && ` (${funding.length})`}
             </button>
           ))}
         </div>
@@ -1721,6 +1848,575 @@ export default function UniversityProjectWorkspace() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB: INDUSTRY PARTNERSHIPS */}
+        {/* ================================================================= */}
+        {activeTab === "Industry Partnerships" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-base font-extrabold text-[#071A33]">Industry Partnerships</h3>
+                <p className="text-xs text-gray-500">
+                  Review expressions of interest from verified corporate innovators and industry leaders.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-400">Total Requests:</span>
+                <span className="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 border border-purple-200">
+                  {partnerships.length}
+                </span>
+              </div>
+            </div>
+
+            {partnerships.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center max-w-md mx-auto space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto">
+                  <Handshake size={24} />
+                </div>
+                <h4 className="text-sm font-bold text-[#071A33]">No Partnership Requests Yet</h4>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  When corporate partners discover this project and submit a formal partnership request, their profile and message will appear here for your review.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {partnerships.map((req) => {
+                  const isPending = req.status === "pending";
+                  const isAccepted = req.status === "accepted";
+                  const isRejected = req.status === "rejected";
+                  const isWithdrawn = req.status === "withdrawn";
+
+                  return (
+                    <div
+                      key={req.id}
+                      className={`bg-white border rounded-3xl p-6 sm:p-7 shadow-xs transition-all ${
+                        isAccepted
+                          ? "border-emerald-200 ring-2 ring-emerald-500/10"
+                          : isPending
+                          ? "border-amber-200"
+                          : "border-gray-200"
+                      }`}
+                    >
+                      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4 mb-4">
+                        <div>
+                          <div className="flex items-center gap-3 mb-1">
+                            <h4 className="text-base font-extrabold text-[#071A33]">{req.company_name}</h4>
+                            <span
+                              className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                                isAccepted
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : isPending
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200"
+                                  : isRejected
+                                  ? "bg-rose-50 text-rose-700 border border-rose-200"
+                                  : "bg-gray-100 text-gray-600 border border-gray-200"
+                              }`}
+                            >
+                              {req.status}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                            {req.industry_sector && (
+                              <span className="font-semibold text-gray-700">{req.industry_sector}</span>
+                            )}
+                            {req.headquarters_location && (
+                              <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1">
+                                  <MapPin size={12} />
+                                  {req.headquarters_location}
+                                </span>
+                              </>
+                            )}
+                            {req.website && (
+                              <>
+                                <span>•</span>
+                                <a
+                                  href={req.website}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-purple-600 hover:underline inline-flex items-center gap-0.5"
+                                >
+                                  Website <ExternalLink size={10} />
+                                </a>
+                              </>
+                            )}
+                            <span>•</span>
+                            <span className="text-gray-400">
+                              Requested {new Date(req.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        {isPending && (
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={() => handleAcceptPartnership(req.id)}
+                              className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs cursor-pointer flex items-center gap-1.5"
+                            >
+                              <CheckCircle2 size={14} />
+                              Accept Partnership
+                            </button>
+                            <button
+                              onClick={() => handleRejectPartnership(req.id)}
+                              className="px-4 py-2 rounded-xl text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 cursor-pointer"
+                            >
+                              Decline
+                            </button>
+                          </div>
+                        )}
+
+                        {isAccepted && (
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold shrink-0">
+                            <CheckCircle2 size={14} className="text-emerald-600" />
+                            Active Partner · Mentorship Enabled
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Partnership Message */}
+                      {req.message && (
+                        <div className="bg-slate-50 border border-gray-100 rounded-2xl p-4 mb-4">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 block mb-1">
+                            Partnership Proposal Message
+                          </span>
+                          <p className="text-xs text-gray-700 leading-relaxed italic whitespace-pre-line">
+                            "{req.message}"
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Company Capability Profile */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 text-xs border-t border-gray-100">
+                        {req.expertise && req.expertise.length > 0 && (
+                          <div>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                              Expertise
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {req.expertise.map((exp, i) => (
+                                <span key={i} className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[11px] font-medium">
+                                  {exp}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {req.technologies && req.technologies.length > 0 && (
+                          <div>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                              Technologies
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {req.technologies.map((t, i) => (
+                                <span key={i} className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[11px] font-medium">
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {req.capabilities && req.capabilities.length > 0 && (
+                          <div>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                              Capabilities
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {req.capabilities.map((c, i) => (
+                                <span key={i} className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[11px] font-medium">
+                                  {c}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {req.collaboration_interests && req.collaboration_interests.length > 0 && (
+                          <div>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                              Collaboration Interests
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {req.collaboration_interests.map((ci, i) => (
+                                <span key={i} className="px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 text-[11px] font-medium">
+                                  {ci}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB: INDUSTRY MENTORS */}
+        {/* ================================================================= */}
+        {activeTab === "Industry Mentors" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-base font-extrabold text-[#071A33]">Corporate Technical Mentors</h3>
+                <p className="text-xs text-gray-500">
+                  Domain specialists and corporate engineers assigned by accepted industry partners.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-400">Assigned Mentors:</span>
+                <span className="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-purple-50 text-purple-700 border border-purple-200">
+                  {mentors.length}
+                </span>
+              </div>
+            </div>
+
+            {mentors.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center max-w-md mx-auto space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mx-auto">
+                  <Users size={24} />
+                </div>
+                <h4 className="text-sm font-bold text-[#071A33]">No Industry Mentors Assigned</h4>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  {partnerships.some((p) => p.status === "accepted")
+                    ? "Your accepted industry partner has not yet assigned a technical specialist to this project. Proactive mentorship engagements will appear here once proposed."
+                    : "Corporate technical mentorship requires an accepted industry partnership. Accept incoming requests in the Industry Partnerships tab to collaborate with industry specialists."}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {mentors.map((m) => (
+                  <div
+                    key={m.id}
+                    className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xs flex flex-col justify-between"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div>
+                          <h4 className="text-sm font-extrabold text-[#071A33]">{m.expert_name}</h4>
+                          <p className="text-xs text-purple-700 font-semibold">{m.expert_designation}</p>
+                          <p className="text-xs text-gray-500 font-medium">{m.company_name || "Industry Partner"}</p>
+                        </div>
+                        <span
+                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
+                            m.status === "active"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : m.status === "proposed"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : m.status === "completed"
+                              ? "bg-blue-50 text-blue-700 border border-blue-200"
+                              : "bg-gray-100 text-gray-600 border border-gray-200"
+                          }`}
+                        >
+                          {m.status}
+                        </span>
+                      </div>
+
+                      {m.objectives && (
+                        <div className="bg-slate-50 border border-gray-100 rounded-2xl p-3.5 mb-3">
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-gray-400 block mb-1">
+                            Mentorship Objectives
+                          </span>
+                          <p className="text-xs text-gray-700 leading-relaxed">{m.objectives}</p>
+                        </div>
+                      )}
+
+                      {m.focus_areas && m.focus_areas.length > 0 && (
+                        <div className="mb-3">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                            Focus Areas
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {m.focus_areas.map((fa, i) => (
+                              <span key={i} className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[10px] font-medium">
+                                {fa}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {m.skills && m.skills.length > 0 && (
+                        <div>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">
+                            Specialist Skills
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {m.skills.map((sk, i) => (
+                              <span key={i} className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[10px] font-medium">
+                                {sk}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
+                      <span>Assigned {new Date(m.created_at).toLocaleDateString()}</span>
+                      {m.expert_email && <span className="text-gray-500 font-medium">{m.expert_email}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB: INDUSTRY RESOURCES */}
+        {/* ================================================================= */}
+        {activeTab === "Industry Resources" && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-base font-extrabold text-[#071A33]">Industry Resources & Technical Support</h3>
+              <p className="text-xs text-gray-500">
+                Technology access, specialized equipment, datasets, software licenses, and infrastructure pledged by accepted industry partners.
+              </p>
+            </div>
+
+            {resources.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center max-w-md mx-auto space-y-3">
+                <Package size={32} className="text-gray-300 mx-auto" />
+                <h4 className="text-sm font-bold text-[#071A33]">No industry resources contributed yet</h4>
+                <p className="text-xs text-gray-500">
+                  Accepted industry partners can propose technology, datasets, equipment, and technical services directly to support your project workflow.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {resources.map((res) => {
+                  const statusColors: Record<string, string> = {
+                    proposed: "bg-amber-50 text-amber-700 border-amber-200",
+                    approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+                    rejected: "bg-rose-50 text-rose-700 border-rose-200",
+                    provided: "bg-blue-50 text-blue-700 border-blue-200",
+                    withdrawn: "bg-gray-100 text-gray-500 border-gray-200",
+                  };
+
+                  return (
+                    <div
+                      key={res.id}
+                      className="bg-white border border-gray-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-100">
+                              {res.resource_type.replace("_", " ")}
+                            </span>
+                            <span
+                              className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                                statusColors[res.status] || "bg-gray-50 text-gray-600 border-gray-200"
+                              }`}
+                            >
+                              {res.status}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-gray-400">
+                            {new Date(res.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+
+                        <h4 className="text-sm font-bold text-[#071A33] mb-1">{res.title}</h4>
+
+                        {res.company_name && (
+                          <p className="text-xs font-semibold text-purple-700 mb-2">
+                            Partner: {res.company_name} {res.industry_sector && `· ${res.industry_sector}`}
+                          </p>
+                        )}
+
+                        <p className="text-xs text-gray-600 mb-3 whitespace-pre-wrap">{res.description}</p>
+
+                        <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 mb-3">
+                          <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">
+                            Scope / Quantity
+                          </p>
+                          <p className="text-xs font-semibold text-gray-800">{res.quantity_or_scope}</p>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
+                        <span className="text-[11px] text-gray-400">
+                          Updated: {new Date(res.updated_at).toLocaleDateString()}
+                        </span>
+                        {res.status === "proposed" && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleRejectResource(res.id)}
+                              className="px-3 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors cursor-pointer"
+                            >
+                              Decline
+                            </button>
+                            <button
+                              onClick={() => handleApproveResource(res.id)}
+                              className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-xs cursor-pointer"
+                            >
+                              Approve
+                            </button>
+                          </div>
+                        )}
+                        {res.status === "approved" && (
+                          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                            Approved by University
+                          </span>
+                        )}
+                        {res.status === "provided" && (
+                          <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">
+                            Provided to Project
+                          </span>
+                        )}
+                        {res.status === "rejected" && (
+                          <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg">
+                            Proposal Declined
+                          </span>
+                        )}
+                        {res.status === "withdrawn" && (
+                          <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg">
+                            Withdrawn by Partner
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ================================================================= */}
+        {/* TAB: INDUSTRY FUNDING */}
+        {/* ================================================================= */}
+        {activeTab === "Industry Funding" && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-base font-extrabold text-[#071A33]">Industry Funding & Sponsorship Proposals</h3>
+              <p className="text-xs text-gray-500">
+                Grant funding, sponsorship packages, and CSR backing proposed by verified corporate partners.
+              </p>
+            </div>
+
+            <div className="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 flex items-start gap-3">
+              <ShieldCheck className="text-indigo-600 shrink-0 mt-0.5" size={18} />
+              <p className="text-xs text-indigo-900 leading-relaxed">
+                <strong>Proposal Governance:</strong> UniBridge records research grants and corporate sponsorship commitments. Formal funding agreements and disbursement clearances follow standard university research administration protocols.
+              </p>
+            </div>
+
+            {funding.length === 0 ? (
+              <div className="bg-white border border-gray-200 rounded-3xl p-12 text-center max-w-md mx-auto space-y-3">
+                <DollarSign size={32} className="text-gray-300 mx-auto" />
+                <h4 className="text-sm font-bold text-[#071A33]">No funding proposals submitted yet</h4>
+                <p className="text-xs text-gray-500">
+                  When accepted corporate partners commit financial backing or research grants, their proposals will appear here for your review and approval.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {funding.map((fund) => {
+                  const statusColors: Record<string, string> = {
+                    proposed: "bg-amber-50 text-amber-700 border-amber-200",
+                    approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+                    rejected: "bg-rose-50 text-rose-700 border-rose-200",
+                    withdrawn: "bg-gray-100 text-gray-500 border-gray-200",
+                    disbursed: "bg-purple-50 text-purple-700 border-purple-200",
+                  };
+
+                  return (
+                    <div
+                      key={fund.id}
+                      className="bg-white border border-gray-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 border border-purple-100">
+                              {fund.funding_type.replace("_", " ")}
+                            </span>
+                            <span
+                              className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${
+                                statusColors[fund.status] || "bg-gray-50 text-gray-600 border-gray-200"
+                              }`}
+                            >
+                              {fund.status}
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-gray-400">
+                            {new Date(fund.proposed_at).toLocaleDateString()}
+                          </span>
+                        </div>
+
+                        <div className="my-2">
+                          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Proposed Amount</p>
+                          <p className="text-2xl font-black text-purple-700 tracking-tight">
+                            {fund.currency} {fund.amount.toLocaleString()}
+                          </p>
+                        </div>
+
+                        <h4 className="text-sm font-bold text-[#071A33] mb-1">{fund.title}</h4>
+
+                        {fund.company_name && (
+                          <p className="text-xs font-semibold text-purple-700 mb-2">
+                            Partner: {fund.company_name} {fund.industry_sector && `· ${fund.industry_sector}`}
+                          </p>
+                        )}
+
+                        <p className="text-xs text-gray-600 mb-3 whitespace-pre-wrap">{fund.description}</p>
+                      </div>
+
+                      <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
+                        <span className="text-[11px] text-gray-400">
+                          Updated: {new Date(fund.updated_at).toLocaleDateString()}
+                        </span>
+                        {fund.status === "proposed" && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleRejectFunding(fund.id)}
+                              className="px-3 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg transition-colors cursor-pointer"
+                            >
+                              Decline
+                            </button>
+                            <button
+                              onClick={() => handleApproveFunding(fund.id)}
+                              className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-xs cursor-pointer"
+                            >
+                              Approve
+                            </button>
+                          </div>
+                        )}
+                        {fund.status === "approved" && (
+                          <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                            Approved by University
+                          </span>
+                        )}
+                        {fund.status === "disbursed" && (
+                          <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg">
+                            Funding Disbursed
+                          </span>
+                        )}
+                        {fund.status === "rejected" && (
+                          <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-lg">
+                            Proposal Declined
+                          </span>
+                        )}
+                        {fund.status === "withdrawn" && (
+                          <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-lg">
+                            Withdrawn by Partner
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

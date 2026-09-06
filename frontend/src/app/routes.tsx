@@ -43,6 +43,8 @@ import IndustryChallenges from "../pages/industry/IndustryChallenges";
 import IndustryChallengeDetails from "../pages/industry/IndustryChallengeDetails";
 import IndustryProjects from "../pages/industry/IndustryProjects";
 import IndustryProjectWorkspace from "../pages/industry/IndustryProjectWorkspace";
+import IndustryPartnerships from "../pages/industry/IndustryPartnerships";
+import IndustryExperts from "../pages/industry/IndustryExperts";
 import IndustryMentorship from "../pages/industry/IndustryMentorship";
 import IndustryFunding from "../pages/industry/IndustryFunding";
 import IndustryTechnology from "../pages/industry/IndustryTechnology";
@@ -50,6 +52,7 @@ import IndustryImpact from "../pages/industry/IndustryImpact";
 import IndustryProfile from "../pages/industry/IndustryProfile";
 
 // Government Pages
+import GovernmentDashboard from "../pages/government/GovernmentDashboard";
 import GovCommandCenter from "../pages/government/GovCommandCenter";
 import GovernmentChallenges from "../pages/government/GovernmentChallenges";
 import GovernmentChallengeDetails from "../pages/government/GovernmentChallengeDetails";
@@ -240,6 +243,22 @@ export const AppRoutes: React.FC = () => {
           }
         />
         <Route
+          path="/industry/partnerships"
+          element={
+            <ProtectedRoute allowedRoles={["industry"]}>
+              <IndustryPartnerships />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/industry/experts"
+          element={
+            <ProtectedRoute allowedRoles={["industry"]}>
+              <IndustryExperts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/industry/mentorship"
           element={
             <ProtectedRoute allowedRoles={["industry"]}>
@@ -282,10 +301,18 @@ export const AppRoutes: React.FC = () => {
 
         {/* GOVERNMENT PROTECTED ROUTES */}
         <Route
+          path="/government"
+          element={
+            <ProtectedRoute allowedRoles={["government"]}>
+              <GovernmentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/government/dashboard"
           element={
             <ProtectedRoute allowedRoles={["government"]}>
-              <GovCommandCenter />
+              <GovernmentDashboard />
             </ProtectedRoute>
           }
         />

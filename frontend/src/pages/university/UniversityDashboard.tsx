@@ -22,6 +22,7 @@ import {
   Briefcase,
   Target,
   ExternalLink,
+  Handshake,
 } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext";
 import { universityService } from "../../services/universityService";
@@ -33,6 +34,7 @@ import {
   UniversityTeam,
   FacultyMember,
   StudentMember,
+  UniversityIndustryCollaborationMetrics,
 } from "../../types";
 import { StatCard } from "../../components/dashboard/StatCard";
 import { DashboardHeader } from "../../components/dashboard/DashboardHeader";
@@ -51,6 +53,7 @@ export default function UniversityDashboard() {
   const [facultyList, setFacultyList] = useState<FacultyMember[]>([]);
   const [studentList, setStudentList] = useState<StudentMember[]>([]);
   const [profile, setProfile] = useState<UniversityProfile | null>(null);
+  const [collabMetrics, setCollabMetrics] = useState<UniversityIndustryCollaborationMetrics | null>(null);
 
   const [selectedChallengeIndex, setSelectedChallengeIndex] = useState(0);
   const [tab, setTab] = useState<"recommended" | "interests" | "projects" | "teams" | "faculty">("recommended");
@@ -60,7 +63,7 @@ export default function UniversityDashboard() {
     async function loadData() {
       setLoading(true);
       try {
-        const [matches, prof, interests, projData, teamData, facData, studData] = await Promise.all([
+        const [matches, prof, interests, projData, teamData, facData, studData, metrics] = await Promise.all([
           universityService.getMatchedChallenges().catch(() => []),
           universityService.getMyProfile().catch(() => null),
           universityService.getUniversityInterests().catch(() => []),
@@ -68,6 +71,7 @@ export default function UniversityDashboard() {
           universityService.getTeamList().catch(() => []),
           universityService.getFacultyList().catch(() => []),
           universityService.getStudentList().catch(() => []),
+          universityService.getIndustryCollaborationMetrics().catch(() => null),
         ]);
         setMatchedItems(matches || []);
         setProfile(prof);
@@ -76,6 +80,7 @@ export default function UniversityDashboard() {
         setTeams(teamData || []);
         setFacultyList(facData || []);
         setStudentList(studData || []);
+        setCollabMetrics(metrics);
       } catch (err) {
         console.error("Failed to load university dashboard:", err);
       } finally {
@@ -232,6 +237,63 @@ export default function UniversityDashboard() {
             color="#0B63F6"
             subtext="Active student roster"
           />
+        </div>
+
+        {/* Industry Collaboration Metrics Bar */}
+        <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 rounded-3xl p-6 mb-8 text-white shadow-md relative overflow-hidden">
+          <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 w-64 h-64 bg-purple-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center gap-1 text-[11px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/30">
+                  <Handshake size={12} /> Industry Collaboration
+                </span>
+              </div>
+              <h3 className="text-base font-extrabold text-white">Corporate Innovation & Mentorship Network</h3>
+              <p className="text-xs text-purple-200/80 max-w-xl">
+                Real-time tracking of corporate partnership requests, accepted industry alliances, and active corporate technical mentors across campus project workspaces.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 shrink-0">
+              <div className="bg-white/10 backdrop-blur-xs border border-white/10 rounded-2xl px-3.5 py-3 text-center">
+                <span className="text-[11px] text-purple-200 block font-medium">Pending Requests</span>
+                <span className="text-xl font-black text-amber-300">
+                  {collabMetrics?.pending_requests ?? collabMetrics?.pending_partnership_requests ?? 0}
+                </span>
+              </div>
+              <div className="bg-white/10 backdrop-blur-xs border border-white/10 rounded-2xl px-3.5 py-3 text-center">
+                <span className="text-[11px] text-purple-200 block font-medium">Active Partners</span>
+                <span className="text-xl font-black text-emerald-400">
+                  {collabMetrics?.active_partnerships ?? 0}
+                </span>
+              </div>
+              <div className="bg-white/10 backdrop-blur-xs border border-white/10 rounded-2xl px-3.5 py-3 text-center">
+                <span className="text-[11px] text-purple-200 block font-medium">Projects Partnered</span>
+                <span className="text-xl font-black text-white">
+                  {collabMetrics?.projects_with_partnerships ?? 0}
+                </span>
+              </div>
+              <div className="bg-white/10 backdrop-blur-xs border border-white/10 rounded-2xl px-3.5 py-3 text-center">
+                <span className="text-[11px] text-purple-200 block font-medium">Active Mentors</span>
+                <span className="text-xl font-black text-purple-300">
+                  {collabMetrics?.active_mentors ?? 0}
+                </span>
+              </div>
+              <div className="bg-white/10 backdrop-blur-xs border border-white/10 rounded-2xl px-3.5 py-3 text-center">
+                <span className="text-[11px] text-purple-200 block font-medium">Resources Pledged</span>
+                <span className="text-xl font-black text-cyan-300">
+                  {collabMetrics?.resource_contributions ?? 0}
+                </span>
+              </div>
+              <div className="bg-white/10 backdrop-blur-xs border border-white/10 rounded-2xl px-3.5 py-3 text-center">
+                <span className="text-[11px] text-purple-200 block font-medium">Funding Proposals</span>
+                <span className="text-xl font-black text-rose-300">
+                  {collabMetrics?.funding_proposals ?? 0}
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Navigation Tabs */}
