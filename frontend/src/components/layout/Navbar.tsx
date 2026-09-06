@@ -27,12 +27,10 @@ export const roleNavigation: Record<UserRole, NavItemConfig[]> = {
   ],
   industry: [
     { label: "Dashboard", path: "/industry/dashboard" },
-    { label: "Challenges", path: "/industry/challenges" },
-    { label: "Projects", path: "/industry/projects" },
+    { label: "Project Discovery", path: "/industry/projects" },
+    { label: "My Partnerships", path: "/industry/partnerships" },
+    { label: "Experts", path: "/industry/experts" },
     { label: "Mentorship", path: "/industry/mentorship" },
-    { label: "Funding", path: "/industry/funding" },
-    { label: "Technology", path: "/industry/technology" },
-    { label: "Impact", path: "/industry/impact" },
     { label: "Profile", path: "/industry/profile" },
   ],
   government: [

@@ -8,6 +8,7 @@ from app.database.taxonomy_db import seed_default_taxonomy_if_empty
 from app.routers.auth import router as auth_router
 from app.routers.challenges import router as challenges_router
 from app.routers.universities import router as universities_router
+from app.routers.industries import router as industries_router
 
 
 logger = logging.getLogger("unibridge.backend")
@@ -53,6 +54,7 @@ app.add_middleware(
 app.include_router(auth_router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(challenges_router, prefix="/api/challenges", tags=["Challenges"])
 app.include_router(universities_router, prefix="/api/universities", tags=["Universities"])
+app.include_router(industries_router, prefix="/api/industries", tags=["Industries"])
 
 
 

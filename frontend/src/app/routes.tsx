@@ -43,6 +43,8 @@ import IndustryChallenges from "../pages/industry/IndustryChallenges";
 import IndustryChallengeDetails from "../pages/industry/IndustryChallengeDetails";
 import IndustryProjects from "../pages/industry/IndustryProjects";
 import IndustryProjectWorkspace from "../pages/industry/IndustryProjectWorkspace";
+import IndustryPartnerships from "../pages/industry/IndustryPartnerships";
+import IndustryExperts from "../pages/industry/IndustryExperts";
 import IndustryMentorship from "../pages/industry/IndustryMentorship";
 import IndustryFunding from "../pages/industry/IndustryFunding";
 import IndustryTechnology from "../pages/industry/IndustryTechnology";
@@ -236,6 +238,22 @@ export const AppRoutes: React.FC = () => {
           element={
             <ProtectedRoute allowedRoles={["industry"]}>
               <IndustryProjectWorkspace />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/industry/partnerships"
+          element={
+            <ProtectedRoute allowedRoles={["industry"]}>
+              <IndustryPartnerships />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/industry/experts"
+          element={
+            <ProtectedRoute allowedRoles={["industry"]}>
+              <IndustryExperts />
             </ProtectedRoute>
           }
         />
