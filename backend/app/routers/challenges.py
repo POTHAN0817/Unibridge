@@ -315,13 +315,12 @@ def get_challenge_university_matches_endpoint(
             detail="Challenge not found.",
         )
 
-    # Ownership enforcement for citizens
+    # Ownership and role enforcement: Citizens cannot view university matches
     user_role = current_user.get("role")
-    user_id = str(current_user.get("id"))
-    if user_role == UserRole.CITIZEN.value and challenge.get("reported_by") != user_id:
+    if user_role == UserRole.CITIZEN.value:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied: You cannot view matches for another citizen's private challenge.",
+            detail="Access denied: University matches are accessible only through the University portal.",
         )
 
     from app.services import university_service
@@ -341,6 +340,7 @@ def get_challenge_by_id_endpoint(
     """
     Fetch a specific challenge by its unique identifier.
     Enforces ownership isolation so citizens cannot inspect another citizen's private challenge.
+    Citizens do not receive university matching data.
     """
     challenge = challenge_service.get_challenge_by_id(challenge_id)
     if not challenge:
@@ -352,11 +352,15 @@ def get_challenge_by_id_endpoint(
     # Ownership enforcement for citizens
     user_role = current_user.get("role")
     user_id = str(current_user.get("id"))
-    if user_role == UserRole.CITIZEN.value and challenge.get("reported_by") != user_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied: You cannot view another citizen's private challenge.",
-        )
+    if user_role == UserRole.CITIZEN.value:
+        if challenge.get("reported_by") != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: You cannot view another citizen's private challenge.",
+            )
+        # Ensure citizen does not see university matching results
+        if isinstance(challenge, dict) and "university_matches" in challenge:
+            challenge["university_matches"] = None
 
     return challenge
 

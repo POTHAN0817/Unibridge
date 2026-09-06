@@ -8,6 +8,7 @@ class UserRole(str, Enum):
     UNIVERSITY = "university"
     INDUSTRY = "industry"
     GOVERNMENT = "government"
+    STUDENT = "student"
 
 
 class CitizenRegisterRequest(BaseModel):

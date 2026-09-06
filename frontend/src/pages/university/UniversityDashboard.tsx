@@ -15,11 +15,12 @@ import {
   Layers,
   ArrowRight,
   Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from "recharts";
 import { useAuth } from "../../auth/AuthContext";
 import { universityService } from "../../services/universityService";
-import { Challenge, UniversityProfile } from "../../types";
+import { UniversityMatchedChallenge, UniversityProfile, UniversityInterest } from "../../types";
 import { StatCard } from "../../components/dashboard/StatCard";
 import { DashboardHeader } from "../../components/dashboard/DashboardHeader";
 import { PageContainer } from "../../components/layout/PageContainer";
@@ -29,22 +30,25 @@ export default function UniversityDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [matchedItems, setMatchedItems] = useState<Array<{ challenge: Challenge; matchEvaluation: any }>>([]);
+  const [matchedItems, setMatchedItems] = useState<UniversityMatchedChallenge[]>([]);
+  const [myInterests, setMyInterests] = useState<UniversityInterest[]>([]);
   const [profile, setProfile] = useState<UniversityProfile | null>(null);
   const [selectedChallengeIndex, setSelectedChallengeIndex] = useState(0);
-  const [tab, setTab] = useState<"recommended" | "active" | "teams">("recommended");
+  const [tab, setTab] = useState<"recommended" | "interests" | "active" | "teams">("recommended");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
-        const [matches, prof] = await Promise.all([
-          universityService.getMatchedChallenges(),
-          universityService.getMyProfile(),
+        const [matches, prof, interests] = await Promise.all([
+          universityService.getMatchedChallenges().catch(() => []),
+          universityService.getMyProfile().catch(() => null),
+          universityService.getUniversityInterests().catch(() => []),
         ]);
         setMatchedItems(matches);
         setProfile(prof);
+        setMyInterests(interests);
       } catch (err) {
         console.error("Failed to load university dashboard:", err);
       } finally {
@@ -54,12 +58,23 @@ export default function UniversityDashboard() {
     loadData();
   }, []);
 
-  const selectedItem = matchedItems[selectedChallengeIndex] || matchedItems[0];
-  const selectedChallenge = selectedItem?.challenge;
-  const selectedEval = selectedItem?.matchEvaluation;
+  const selectedChallenge = matchedItems[selectedChallengeIndex] || matchedItems[0];
+  const selectedEval = selectedChallenge?.match_evaluation;
+
+  const formatLocation = (loc: any): string => {
+    if (!loc) return "Location not specified";
+    if (typeof loc === "string") return loc;
+    if (typeof loc === "object") {
+      return [loc.address, loc.district, loc.state].filter(Boolean).join(", ") || "Location not specified";
+    }
+    return "Location not specified";
+  };
 
   const facultyCount = profile?.faculty?.length || 0;
   const institutionName = profile?.name || user?.organization || (user?.profile as Record<string, any>)?.university_name || "INSTITUTIONAL INNOVATION CENTER";
+  const campusLocation = typeof profile?.location === "string"
+    ? profile.location
+    : profile?.location?.city || user?.district || user?.state || "National";
 
   return (
     <div className="min-h-screen bg-white">
@@ -89,25 +104,25 @@ export default function UniversityDashboard() {
             subtext="AI Capability Matches"
           />
           <StatCard
+            label="Challenge Interests"
+            value={myInterests.length.toString().padStart(2, "0")}
+            icon={Sparkles}
+            color="#10B981"
+            subtext="Expressed Adoptions"
+          />
+          <StatCard
             label="Faculty Mentors"
             value={facultyCount.toString().padStart(2, "0")}
             icon={Users}
-            color="#10B981"
+            color="#8B5CF6"
             subtext="Registered Research Leads"
           />
           <StatCard
             label="Campus Research Focus"
-            value={profile?.location?.city || user?.district || user?.state || "National"}
+            value={campusLocation}
             icon={MapPin}
             color="#0B63F6"
             subtext="Regional Innovation Hub"
-          />
-          <StatCard
-            label="Institutional Status"
-            value={profile?.availability === "available" ? "Active" : profile?.availability || "Active"}
-            icon={Award}
-            color="#F59E0B"
-            subtext="Accredited Academic Partner"
           />
         </div>
 
@@ -115,6 +130,7 @@ export default function UniversityDashboard() {
         <div className="flex border-b border-gray-200 mb-8 overflow-x-auto">
           {[
             { id: "recommended", label: `AI-Matched Challenges (${matchedItems.length})` },
+            { id: "interests", label: `My Challenge Interests (${myInterests.length})` },
             { id: "active", label: "Active Campus Projects (0)" },
             { id: "teams", label: `Faculty Mentors (${facultyCount})` },
           ].map((t) => (
@@ -154,9 +170,9 @@ export default function UniversityDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left list (2 cols) */}
               <div className="lg:col-span-2 space-y-4">
-                {matchedItems.map(({ challenge: c, matchEvaluation: mEval }, idx) => (
+                {matchedItems.map((c, idx) => (
                   <div
-                    key={c.id}
+                    key={c.challenge_id}
                     onClick={() => setSelectedChallengeIndex(idx)}
                     className={`rounded-2xl p-5 border transition-all cursor-pointer ${
                       selectedChallengeIndex === idx
@@ -169,10 +185,10 @@ export default function UniversityDashboard() {
                         <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-800">
                           {c.category}
                         </span>
-                        <PriorityBadge priority={c.priority} />
+                        <PriorityBadge priority={c.priority_analysis?.level || c.urgency || "medium"} />
                       </div>
                       <span className="text-xs font-extrabold text-purple-700 bg-white border border-purple-200 px-2 py-0.5 rounded-md">
-                        {mEval?.score || 0}/100 Match
+                        {c.match_score || 0}/100 Match
                       </span>
                     </div>
 
@@ -181,7 +197,7 @@ export default function UniversityDashboard() {
 
                     <div className="flex items-center justify-between text-xs text-gray-400 pt-3 border-t border-gray-100">
                       <span className="flex items-center gap-1">
-                        <MapPin size={12} /> {c.location}
+                        <MapPin size={12} /> {formatLocation(c.location)}
                       </span>
                       <span className="text-purple-600 font-semibold inline-flex items-center gap-1">
                         Inspect Challenge <ArrowRight size={12} />
@@ -202,9 +218,9 @@ export default function UniversityDashboard() {
 
                     <div className="text-center py-2">
                       <div className="text-3xl font-extrabold text-purple-600">
-                        {selectedEval?.score || 0}/100
+                        {selectedChallenge.match_score || 0}/100
                       </div>
-                      <div className="text-xs font-bold text-gray-700 mt-1">{selectedEval?.level || "Evaluated Match"}</div>
+                      <div className="text-xs font-bold text-gray-700 mt-1">{selectedChallenge.match_level || "Evaluated Match"}</div>
                     </div>
 
                     {selectedEval?.factors && (
@@ -236,14 +252,14 @@ export default function UniversityDashboard() {
                       </div>
                     )}
 
-                    {selectedEval?.explanation && (
+                    {(selectedChallenge.explanation || selectedEval?.explanation) && (
                       <p className="text-[11px] text-gray-600 italic bg-purple-50/50 p-3 rounded-xl border border-purple-100">
-                        "{selectedEval.explanation}"
+                        "{selectedChallenge.explanation || selectedEval?.explanation}"
                       </p>
                     )}
 
                     <Link
-                      to={`/university/challenges/${selectedChallenge.id}`}
+                      to={`/university/challenges/${selectedChallenge.challenge_id}`}
                       className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-xs"
                     >
                       View Problem Statement & Field Dossier <ArrowRight size={14} />
@@ -251,6 +267,108 @@ export default function UniversityDashboard() {
                   </div>
                 </div>
               )}
+            </div>
+          )
+        )}
+
+        {/* Tab: My Challenge Interests */}
+        {tab === "interests" && (
+          myInterests.length === 0 ? (
+            <div className="bg-slate-50 border border-gray-200 rounded-3xl p-12 text-center max-w-xl mx-auto space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mx-auto">
+                <Sparkles size={24} />
+              </div>
+              <h3 className="text-base font-bold text-[#071A33]">No challenge interests yet.</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Explore your institutional AI-matched civic challenges and express interest to signal adoption intent and launch student-faculty project initiatives.
+              </p>
+              <button
+                onClick={() => setTab("recommended")}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-xs cursor-pointer"
+              >
+                Explore Matched Challenges <ArrowRight size={14} />
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                <div>
+                  <h2 className="text-sm font-bold text-[#071A33]">My Challenge Interests</h2>
+                  <p className="text-xs text-gray-500">Real interest submissions and civic challenge adoptions by your institution</p>
+                </div>
+                <span className="text-xs font-semibold px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-lg">
+                  {myInterests.length} {myInterests.length === 1 ? "Record" : "Records"}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3">
+                {myInterests.map((interest) => {
+                  const dateStr = interest.created_at
+                    ? new Date(interest.created_at).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : "Recently";
+
+                  const statusConfig = {
+                    pending: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", label: "Pending Review" },
+                    accepted: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", label: "Accepted" },
+                    rejected: { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200", label: "Declined" },
+                    withdrawn: { bg: "bg-gray-50", text: "text-gray-600", border: "border-gray-200", label: "Withdrawn" },
+                  }[interest.status] || {
+                    bg: "bg-purple-50",
+                    text: "text-purple-700",
+                    border: "border-purple-200",
+                    label: interest.status,
+                  };
+
+                  return (
+                    <div
+                      key={interest._id || interest.id}
+                      className="bg-white border border-gray-200 hover:border-purple-300 rounded-2xl p-5 shadow-xs transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
+                    >
+                      <div className="space-y-1.5 flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span
+                            className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}
+                          >
+                            <Clock size={11} />
+                            {statusConfig.label}
+                          </span>
+                          {(interest.challenge_category || interest.challenge?.category) && (
+                            <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-gray-100 text-gray-700">
+                              {interest.challenge_category || interest.challenge?.category}
+                            </span>
+                          )}
+                          <span className="text-[11px] text-gray-400">
+                            Submitted: {dateStr}
+                          </span>
+                        </div>
+
+                        <h4 className="text-sm font-bold text-[#071A33] truncate">
+                          {interest.challenge_title || interest.challenge?.title || "Civic Challenge"}
+                        </h4>
+
+                        {interest.message && (
+                          <p className="text-xs text-gray-600 italic bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 line-clamp-2">
+                            "{interest.message}"
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <Link
+                          to={`/university/challenges/${interest.challenge_id}`}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 transition-colors shadow-xs"
+                        >
+                          View Challenge Dossier <ArrowRight size={13} />
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )
         )}
@@ -286,10 +404,10 @@ export default function UniversityDashboard() {
                 Add professors, lab directors, and principal investigators to your institutional profile so they can supervise student research cohorts.
               </p>
               <Link
-                to="/university/profile"
+                to="/university/faculty"
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-xs"
               >
-                Configure Faculty Mentors <ArrowRight size={14} />
+                Manage Faculty Mentors <ArrowRight size={14} />
               </Link>
             </div>
           ) : (
