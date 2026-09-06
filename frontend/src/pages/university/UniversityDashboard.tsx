@@ -16,15 +16,29 @@ import {
   ArrowRight,
   Sparkles,
   CheckCircle2,
+  FolderGit2,
+  Rocket,
+  GraduationCap,
+  Briefcase,
+  Target,
+  ExternalLink,
 } from "lucide-react";
-import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from "recharts";
 import { useAuth } from "../../auth/AuthContext";
 import { universityService } from "../../services/universityService";
-import { UniversityMatchedChallenge, UniversityProfile, UniversityInterest } from "../../types";
+import {
+  UniversityMatchedChallenge,
+  UniversityProfile,
+  UniversityInterest,
+  UniversityProject,
+  UniversityTeam,
+  FacultyMember,
+  StudentMember,
+} from "../../types";
 import { StatCard } from "../../components/dashboard/StatCard";
 import { DashboardHeader } from "../../components/dashboard/DashboardHeader";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { PriorityBadge } from "../../components/common/PriorityBadge";
+import { LoadingState } from "../../components/common/LoadingState";
 
 export default function UniversityDashboard() {
   const { user } = useAuth();
@@ -32,23 +46,36 @@ export default function UniversityDashboard() {
 
   const [matchedItems, setMatchedItems] = useState<UniversityMatchedChallenge[]>([]);
   const [myInterests, setMyInterests] = useState<UniversityInterest[]>([]);
+  const [projects, setProjects] = useState<UniversityProject[]>([]);
+  const [teams, setTeams] = useState<UniversityTeam[]>([]);
+  const [facultyList, setFacultyList] = useState<FacultyMember[]>([]);
+  const [studentList, setStudentList] = useState<StudentMember[]>([]);
   const [profile, setProfile] = useState<UniversityProfile | null>(null);
+
   const [selectedChallengeIndex, setSelectedChallengeIndex] = useState(0);
-  const [tab, setTab] = useState<"recommended" | "interests" | "active" | "teams">("recommended");
+  const [tab, setTab] = useState<"recommended" | "interests" | "projects" | "teams" | "faculty">("recommended");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {
-        const [matches, prof, interests] = await Promise.all([
+        const [matches, prof, interests, projData, teamData, facData, studData] = await Promise.all([
           universityService.getMatchedChallenges().catch(() => []),
           universityService.getMyProfile().catch(() => null),
           universityService.getUniversityInterests().catch(() => []),
+          universityService.getProjectList().catch(() => []),
+          universityService.getTeamList().catch(() => []),
+          universityService.getFacultyList().catch(() => []),
+          universityService.getStudentList().catch(() => []),
         ]);
-        setMatchedItems(matches);
+        setMatchedItems(matches || []);
         setProfile(prof);
-        setMyInterests(interests);
+        setMyInterests(interests || []);
+        setProjects(projData || []);
+        setTeams(teamData || []);
+        setFacultyList(facData || []);
+        setStudentList(studData || []);
       } catch (err) {
         console.error("Failed to load university dashboard:", err);
       } finally {
@@ -70,11 +97,27 @@ export default function UniversityDashboard() {
     return "Location not specified";
   };
 
-  const facultyCount = profile?.faculty?.length || 0;
-  const institutionName = profile?.name || user?.organization || (user?.profile as Record<string, any>)?.university_name || "INSTITUTIONAL INNOVATION CENTER";
-  const campusLocation = typeof profile?.location === "string"
-    ? profile.location
-    : profile?.location?.city || user?.district || user?.state || "National";
+  const totalProjects = projects.length;
+  const activeProjects = projects.filter((p) => p.status !== "completed" && p.status !== "archived").length;
+  const advancedPhaseProjects = projects.filter((p) => ["prototype", "pilot", "deployment"].includes(p.status)).length;
+  const completedProjects = projects.filter((p) => p.status === "completed").length;
+  const totalFaculty = facultyList.length || profile?.faculty?.length || 0;
+  const totalStudents = studentList.length;
+
+  const institutionName =
+    profile?.name ||
+    user?.organization ||
+    (user?.profile as Record<string, any>)?.university_name ||
+    "INSTITUTIONAL INNOVATION CENTER";
+
+  const campusLocation =
+    typeof profile?.location === "string"
+      ? profile.location
+      : profile?.location?.city || user?.district || user?.state || "National";
+
+  if (loading) {
+    return <LoadingState message="Loading university innovation metrics & research workspaces..." />;
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -85,44 +128,109 @@ export default function UniversityDashboard() {
         title="University Innovation & Faculty Command Center"
         subtitle="AI-matched societal challenges, student-faculty multidisciplinary teams, and real-world pilot projects."
       >
-        <Link
-          to="/university/profile"
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-all shadow-xs"
-        >
-          <Layers size={15} /> Institutional Profile
-        </Link>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/university/projects"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 transition-all border border-purple-200"
+          >
+            <FolderGit2 size={14} /> Workspaces ({totalProjects})
+          </Link>
+          <Link
+            to="/university/profile"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-all shadow-xs"
+          >
+            <Layers size={14} /> Profile
+          </Link>
+        </div>
       </DashboardHeader>
 
       <PageContainer>
+        {/* Quick Navigation Cards Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
+          <Link
+            to="/university/challenges"
+            className="p-3.5 bg-purple-50/60 hover:bg-purple-100/70 rounded-2xl border border-purple-100 transition-all text-center group"
+          >
+            <Brain size={18} className="text-purple-600 mx-auto mb-1 group-hover:scale-110 transition-transform" />
+            <span className="text-[11px] font-bold text-gray-800 block">Matched Challenges</span>
+            <span className="text-xs font-black text-purple-700">{matchedItems.length} Available</span>
+          </Link>
+
+          <button
+            onClick={() => setTab("interests")}
+            className="p-3.5 bg-emerald-50/60 hover:bg-emerald-100/70 rounded-2xl border border-emerald-100 transition-all text-center group cursor-pointer"
+          >
+            <Sparkles size={18} className="text-emerald-600 mx-auto mb-1 group-hover:scale-110 transition-transform" />
+            <span className="text-[11px] font-bold text-gray-800 block">Expressed Interests</span>
+            <span className="text-xs font-black text-emerald-700">{myInterests.length} Records</span>
+          </button>
+
+          <Link
+            to="/university/projects"
+            className="p-3.5 bg-blue-50/60 hover:bg-blue-100/70 rounded-2xl border border-blue-100 transition-all text-center group"
+          >
+            <FolderGit2 size={18} className="text-blue-600 mx-auto mb-1 group-hover:scale-110 transition-transform" />
+            <span className="text-[11px] font-bold text-gray-800 block">Active Projects</span>
+            <span className="text-xs font-black text-blue-700">{totalProjects} Workspaces</span>
+          </Link>
+
+          <Link
+            to="/university/teams"
+            className="p-3.5 bg-indigo-50/60 hover:bg-indigo-100/70 rounded-2xl border border-indigo-100 transition-all text-center group"
+          >
+            <Users size={18} className="text-indigo-600 mx-auto mb-1 group-hover:scale-110 transition-transform" />
+            <span className="text-[11px] font-bold text-gray-800 block">Innovation Teams</span>
+            <span className="text-xs font-black text-indigo-700">{teams.length} Formed</span>
+          </Link>
+
+          <Link
+            to="/university/faculty"
+            className="p-3.5 bg-violet-50/60 hover:bg-violet-100/70 rounded-2xl border border-violet-100 transition-all text-center group"
+          >
+            <Briefcase size={18} className="text-violet-600 mx-auto mb-1 group-hover:scale-110 transition-transform" />
+            <span className="text-[11px] font-bold text-gray-800 block">Faculty Roster</span>
+            <span className="text-xs font-black text-violet-700">{totalFaculty} Mentors</span>
+          </Link>
+
+          <Link
+            to="/university/students"
+            className="p-3.5 bg-sky-50/60 hover:bg-sky-100/70 rounded-2xl border border-sky-100 transition-all text-center group"
+          >
+            <GraduationCap size={18} className="text-sky-600 mx-auto mb-1 group-hover:scale-110 transition-transform" />
+            <span className="text-[11px] font-bold text-gray-800 block">Student Innovators</span>
+            <span className="text-xs font-black text-sky-700">{totalStudents} Enrolled</span>
+          </Link>
+        </div>
+
         {/* Metric Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <StatCard
-            label="Matched Challenges"
-            value={matchedItems.length.toString().padStart(2, "0")}
-            icon={Brain}
+            label="Total Projects"
+            value={totalProjects.toString().padStart(2, "0")}
+            icon={FolderGit2}
             color="#8B5CF6"
-            subtext="AI Capability Matches"
+            subtext={`${activeProjects} active initiatives`}
           />
           <StatCard
-            label="Challenge Interests"
-            value={myInterests.length.toString().padStart(2, "0")}
-            icon={Sparkles}
+            label="Prototypes & Pilots"
+            value={advancedPhaseProjects.toString().padStart(2, "0")}
+            icon={Rocket}
             color="#10B981"
-            subtext="Expressed Adoptions"
+            subtext={`${completedProjects} completed solutions`}
           />
           <StatCard
             label="Faculty Mentors"
-            value={facultyCount.toString().padStart(2, "0")}
-            icon={Users}
-            color="#8B5CF6"
-            subtext="Registered Research Leads"
+            value={totalFaculty.toString().padStart(2, "0")}
+            icon={Briefcase}
+            color="#6366F1"
+            subtext="Supervising researchers"
           />
           <StatCard
-            label="Campus Research Focus"
-            value={campusLocation}
-            icon={MapPin}
+            label="Student Innovators"
+            value={totalStudents.toString().padStart(2, "0")}
+            icon={GraduationCap}
             color="#0B63F6"
-            subtext="Regional Innovation Hub"
+            subtext="Active student roster"
           />
         </div>
 
@@ -131,8 +239,9 @@ export default function UniversityDashboard() {
           {[
             { id: "recommended", label: `AI-Matched Challenges (${matchedItems.length})` },
             { id: "interests", label: `My Challenge Interests (${myInterests.length})` },
-            { id: "active", label: "Active Campus Projects (0)" },
-            { id: "teams", label: `Faculty Mentors (${facultyCount})` },
+            { id: "projects", label: `Active Campus Projects (${totalProjects})` },
+            { id: "teams", label: `Innovation Teams (${teams.length})` },
+            { id: "faculty", label: `Faculty Mentors (${totalFaculty})` },
           ].map((t) => (
             <button
               key={t.id}
@@ -373,35 +482,188 @@ export default function UniversityDashboard() {
           )
         )}
 
-        {/* Tab 2: Active Projects */}
-        {tab === "active" && (
-          <div className="bg-slate-50 border border-gray-200 rounded-3xl p-12 text-center max-w-xl mx-auto space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mx-auto">
-              <Zap size={24} />
-            </div>
-            <h3 className="text-base font-bold text-[#071A33]">No active campus projects yet.</h3>
-            <p className="text-xs text-gray-500 leading-relaxed">
-              When your departments adopt AI-matched civic challenges, multidisciplinary student-faculty teams and live pilot development workspaces will appear here.
-            </p>
-            <button
-              onClick={() => setTab("recommended")}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-xs cursor-pointer"
-            >
-              Browse AI-Matched Challenges <ArrowRight size={14} />
-            </button>
-          </div>
-        )}
-
-        {/* Tab 3: Faculty & Teams */}
-        {tab === "teams" && (
-          !profile?.faculty || profile.faculty.length === 0 ? (
+        {/* Tab 3: Active Projects */}
+        {tab === "projects" && (
+          projects.length === 0 ? (
             <div className="bg-slate-50 border border-gray-200 rounded-3xl p-12 text-center max-w-xl mx-auto space-y-3">
               <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mx-auto">
+                <FolderGit2 size={24} />
+              </div>
+              <h3 className="text-base font-bold text-[#071A33]">No campus project workspaces yet.</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                When your institution forms multidisciplinary teams to solve adopted civic challenges, launch dedicated project workspaces to coordinate research, build prototypes, and deploy field pilots.
+              </p>
+              <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
+                <Link
+                  to="/university/teams"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-xs"
+                >
+                  <Users size={14} /> Form an Innovation Team First
+                </Link>
+                <Link
+                  to="/university/projects"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-gray-700 bg-slate-100 hover:bg-slate-200 transition-colors"
+                >
+                  Go to Projects <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                <div>
+                  <h3 className="text-sm font-bold text-[#071A33]">Institutional R&D Workspaces</h3>
+                  <p className="text-xs text-gray-500">Live project initiatives addressing adopted civic challenges</p>
+                </div>
+                <Link
+                  to="/university/projects"
+                  className="text-xs font-bold text-purple-600 hover:text-purple-700 inline-flex items-center gap-1"
+                >
+                  Manage All Projects <ArrowRight size={13} />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {projects.map((proj) => (
+                  <div
+                    key={proj.id}
+                    className="bg-white border border-gray-200/90 hover:border-purple-300 rounded-3xl p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-100 uppercase">
+                          {proj.challenge_category || "Civic Innovation"}
+                        </span>
+                        <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 uppercase">
+                          {proj.status.replace("_", " ")}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="text-sm font-bold text-[#071A33] line-clamp-1">{proj.name}</h4>
+                        <p className="text-xs text-gray-500 line-clamp-2 mt-1">
+                          {proj.description || "No project description provided."}
+                        </p>
+                      </div>
+
+                      {/* Milestone progress bar */}
+                      <div className="bg-slate-50 rounded-xl p-2.5 border border-gray-100 space-y-1.5">
+                        <div className="flex justify-between text-[11px]">
+                          <span className="text-gray-500 font-medium">Milestones</span>
+                          <span className="font-bold text-gray-900">{proj.milestone_progress ?? 0}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className="bg-purple-600 h-1.5 rounded-full transition-all"
+                            style={{ width: `${proj.milestone_progress ?? 0}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="text-[11px] text-gray-500 space-y-1">
+                        <div>Team: <strong className="text-gray-800">{proj.team_name}</strong></div>
+                        <div className="truncate">Target: <strong className="text-gray-800">{proj.challenge_title}</strong></div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between">
+                      <Link
+                        to={`/university/projects/${proj.id}`}
+                        className="w-full text-center py-2 px-3 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-xs inline-flex items-center justify-center gap-1.5"
+                      >
+                        Open Workspace <ArrowRight size={13} />
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        )}
+
+        {/* Tab 4: Teams */}
+        {tab === "teams" && (
+          teams.length === 0 ? (
+            <div className="bg-slate-50 border border-gray-200 rounded-3xl p-12 text-center max-w-xl mx-auto space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-100 text-indigo-700 flex items-center justify-center mx-auto">
                 <Users size={24} />
+              </div>
+              <h3 className="text-base font-bold text-[#071A33]">No innovation teams formed yet.</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Connect faculty mentors and student researchers to adopted civic challenges to form multidisciplinary research teams.
+              </p>
+              <Link
+                to="/university/teams"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-700 transition-colors shadow-xs"
+              >
+                <Users size={14} /> Form Innovation Team
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-gray-100">
+                <div>
+                  <h3 className="text-sm font-bold text-[#071A33]">Multidisciplinary Innovation Teams</h3>
+                  <p className="text-xs text-gray-500">Student and faculty cohorts tackling civic challenges</p>
+                </div>
+                <Link
+                  to="/university/teams"
+                  className="text-xs font-bold text-purple-600 hover:text-purple-700 inline-flex items-center gap-1"
+                >
+                  Manage Teams <ArrowRight size={13} />
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {teams.map((t) => (
+                  <div
+                    key={t.id}
+                    className="bg-white border border-gray-200/90 rounded-3xl p-5 shadow-xs flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-[#071A33]">{t.name}</h4>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase">
+                          {t.status}
+                        </span>
+                      </div>
+
+                      <div className="p-2.5 bg-purple-50/50 rounded-xl border border-purple-100/70 text-xs">
+                        <span className="text-[10px] font-bold text-purple-700 uppercase block mb-0.5">Challenge</span>
+                        <div className="font-semibold text-gray-800 line-clamp-1">{t.challenge_title || "Civic Challenge"}</div>
+                      </div>
+
+                      <div className="space-y-1 text-xs text-gray-600">
+                        <div>Mentors: <strong className="text-gray-800">{t.faculty_members.length}</strong></div>
+                        <div>Students: <strong className="text-gray-800">{t.student_members.length}</strong></div>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 mt-4 border-t border-gray-100">
+                      <Link
+                        to="/university/teams"
+                        className="w-full text-center py-2 px-3 rounded-xl text-xs font-bold text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors inline-block"
+                      >
+                        Inspect Team Roster
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        )}
+
+        {/* Tab 5: Faculty */}
+        {tab === "faculty" && (
+          facultyList.length === 0 ? (
+            <div className="bg-slate-50 border border-gray-200 rounded-3xl p-12 text-center max-w-xl mx-auto space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mx-auto">
+                <Briefcase size={24} />
               </div>
               <h3 className="text-base font-bold text-[#071A33]">No faculty mentors registered yet.</h3>
               <p className="text-xs text-gray-500 leading-relaxed">
-                Add professors, lab directors, and principal investigators to your institutional profile so they can supervise student research cohorts.
+                Add professors, lab directors, and principal investigators to your institutional roster so they can supervise student research cohorts.
               </p>
               <Link
                 to="/university/faculty"
@@ -412,9 +674,9 @@ export default function UniversityDashboard() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {profile.faculty.map((fac, idx) => (
+              {facultyList.map((fac) => (
                 <div
-                  key={idx}
+                  key={fac.id}
                   className="bg-white border border-gray-200 rounded-3xl p-6 shadow-xs flex flex-col justify-between"
                 >
                   <div>
@@ -471,3 +733,4 @@ export default function UniversityDashboard() {
     </div>
   );
 }
+

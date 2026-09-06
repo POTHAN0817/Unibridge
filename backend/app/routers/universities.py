@@ -1,6 +1,6 @@
 import logging
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 
 from app.dependencies import get_current_user, require_role
 from app.schemas.auth import UserRole
@@ -16,8 +16,32 @@ from app.schemas.university import (
     StudentCreate,
     StudentUpdate,
     StudentResponse,
+    TeamCreate,
+    TeamUpdate,
+    TeamResponse,
+    ProjectCreate,
+    ProjectUpdate,
+    ProjectResponse,
+    MilestoneCreate,
+    MilestoneUpdate,
+    MilestoneResponse,
+    ResearchCreate,
+    ResearchUpdate,
+    ResearchResponse,
+    SolutionProposalCreate,
+    SolutionProposalUpdate,
+    SolutionProposalResponse,
+    PrototypeCreate,
+    PrototypeUpdate,
+    PrototypeResponse,
+    PilotCreate,
+    PilotUpdate,
+    PilotResponse,
+    DeploymentReadinessUpdate,
+    DeploymentReadinessResponse,
+    ProjectActivityResponse,
 )
-from app.services import university_service
+from app.services import university_service, cloudinary_service
 
 logger = logging.getLogger("unibridge.universities_router")
 router = APIRouter()
@@ -364,6 +388,601 @@ def create_student_endpoint(
             detail="Invalid user identification.",
         )
     return university_service.create_student(str(user_id), student_in)
+
+
+# =============================================================================
+# TEAM MANAGEMENT ENDPOINTS (Step 5C)
+# =============================================================================
+
+@router.post(
+    "/teams",
+    response_model=TeamResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Form a university innovation team",
+    description="Forms a multidisciplinary team connecting faculty mentors and student researchers to an adopted challenge.",
+)
+def create_team_endpoint(
+    team_in: TeamCreate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user identification.",
+        )
+    return university_service.create_team(str(user_id), team_in)
+
+
+@router.get(
+    "/teams",
+    response_model=List[TeamResponse],
+    summary="List all university innovation teams",
+    description="Returns all teams belonging to the authenticated university, with optional search, status, and challenge filters.",
+)
+def get_team_list_endpoint(
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    challenge_id: Optional[str] = None,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user identification.",
+        )
+    return university_service.get_team_list(
+        user_id=str(user_id),
+        search=search,
+        status=status,
+        challenge_id=challenge_id,
+    )
+
+
+@router.get(
+    "/teams/{team_id}",
+    response_model=TeamResponse,
+    summary="Get a specific team by ID",
+    description="Retrieves a single team record with full roster hydration. Enforces strict university ownership.",
+)
+def get_team_by_id_endpoint(
+    team_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user identification.",
+        )
+    return university_service.get_team_by_id(str(user_id), team_id)
+
+
+@router.put(
+    "/teams/{team_id}",
+    response_model=TeamResponse,
+    summary="Update a university team",
+    description="Updates team details, faculty mentors, student researchers, or status. Enforces strict university ownership.",
+)
+def update_team_endpoint(
+    team_id: str,
+    team_in: TeamUpdate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user identification.",
+        )
+    return university_service.update_team(str(user_id), team_id, team_in)
+
+
+@router.delete(
+    "/teams/{team_id}",
+    summary="Delete a university team",
+    description="Deletes a team record. Enforces strict university ownership.",
+)
+def delete_team_endpoint(
+    team_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user identification.",
+        )
+    return university_service.delete_team(str(user_id), team_id)
+
+
+# =============================================================================
+# PROJECT MANAGEMENT ENDPOINTS (Step 6A)
+# =============================================================================
+
+@router.post(
+    "/projects",
+    response_model=ProjectResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a university project workspace",
+    description="Creates a project workspace linking an eligible university team to an adopted challenge.",
+)
+def create_project_endpoint(
+    project_in: ProjectCreate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user identification.",
+        )
+    return university_service.create_project(str(user_id), project_in)
+
+
+@router.get(
+    "/projects",
+    response_model=List[ProjectResponse],
+    summary="List university projects",
+    description="Returns all projects belonging to the authenticated university, with optional search, status, team, and challenge filters.",
+)
+def get_project_list_endpoint(
+    search: Optional[str] = None,
+    status: Optional[str] = None,
+    team_id: Optional[str] = None,
+    challenge_id: Optional[str] = None,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user identification.",
+        )
+    return university_service.get_project_list(
+        user_id=str(user_id),
+        search=search,
+        status_filter=status,
+        team_id=team_id,
+        challenge_id=challenge_id,
+    )
+
+
+@router.get(
+    "/projects/{project_id}",
+    response_model=ProjectResponse,
+    summary="Get a specific project by ID",
+    description="Retrieves a single project record with full roster and challenge hydration. Enforces strict university ownership.",
+)
+def get_project_by_id_endpoint(
+    project_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user identification.",
+        )
+    return university_service.get_project_by_id(str(user_id), project_id)
+
+
+@router.put(
+    "/projects/{project_id}",
+    response_model=ProjectResponse,
+    summary="Update a university project",
+    description="Updates project title, description, dates, or status lifecycle. Enforces strict university ownership.",
+)
+def update_project_endpoint(
+    project_id: str,
+    project_in: ProjectUpdate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user identification.",
+        )
+    return university_service.update_project(str(user_id), project_id, project_in)
+
+
+@router.delete(
+    "/projects/{project_id}",
+    summary="Delete a university project",
+    description="Deletes a project record. Enforces strict university ownership.",
+)
+def delete_project_endpoint(
+    project_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid user identification.",
+        )
+    return university_service.delete_project(str(user_id), project_id)
+
+
+# =============================================================================
+# PART 2: PROJECT MILESTONES ENDPOINTS
+# =============================================================================
+
+@router.post(
+    "/projects/{project_id}/milestones",
+    response_model=MilestoneResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a project milestone",
+)
+def create_milestone_endpoint(
+    project_id: str,
+    milestone_in: MilestoneCreate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.create_milestone(str(user_id), project_id, milestone_in)
+
+
+@router.get(
+    "/projects/{project_id}/milestones",
+    response_model=List[MilestoneResponse],
+    summary="List all milestones for a project",
+)
+def get_milestones_endpoint(
+    project_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_milestones(str(user_id), project_id)
+
+
+@router.put(
+    "/projects/{project_id}/milestones/{milestone_id}",
+    response_model=MilestoneResponse,
+    summary="Update a project milestone",
+)
+def update_milestone_endpoint(
+    project_id: str,
+    milestone_id: str,
+    milestone_in: MilestoneUpdate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.update_milestone(str(user_id), project_id, milestone_id, milestone_in)
+
+
+@router.delete(
+    "/projects/{project_id}/milestones/{milestone_id}",
+    summary="Delete a project milestone",
+)
+def delete_milestone_endpoint(
+    project_id: str,
+    milestone_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.delete_milestone(str(user_id), project_id, milestone_id)
+
+
+# =============================================================================
+# PART 3: RESEARCH MANAGEMENT ENDPOINTS
+# =============================================================================
+
+@router.post(
+    "/projects/{project_id}/research",
+    response_model=ResearchResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add research findings or technical paper reference",
+)
+def create_research_endpoint(
+    project_id: str,
+    research_in: ResearchCreate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.create_research(str(user_id), project_id, research_in)
+
+
+@router.get(
+    "/projects/{project_id}/research",
+    response_model=List[ResearchResponse],
+    summary="List all research entries for a project",
+)
+def get_research_list_endpoint(
+    project_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_research_list(str(user_id), project_id)
+
+
+@router.put(
+    "/projects/{project_id}/research/{research_id}",
+    response_model=ResearchResponse,
+    summary="Update a research entry",
+)
+def update_research_endpoint(
+    project_id: str,
+    research_id: str,
+    research_in: ResearchUpdate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.update_research(str(user_id), project_id, research_id, research_in)
+
+
+@router.delete(
+    "/projects/{project_id}/research/{research_id}",
+    summary="Delete a research entry",
+)
+def delete_research_endpoint(
+    project_id: str,
+    research_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.delete_research(str(user_id), project_id, research_id)
+
+
+# =============================================================================
+# PART 4: SOLUTION PROPOSAL ENDPOINTS
+# =============================================================================
+
+@router.get(
+    "/projects/{project_id}/solution",
+    response_model=Optional[SolutionProposalResponse],
+    summary="Get persistent solution proposal for a project",
+)
+def get_solution_endpoint(
+    project_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_solution(str(user_id), project_id)
+
+
+@router.post(
+    "/projects/{project_id}/solution",
+    response_model=SolutionProposalResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Create or save solution proposal",
+)
+def create_solution_endpoint(
+    project_id: str,
+    solution_in: SolutionProposalCreate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.save_solution(str(user_id), project_id, solution_in)
+
+
+@router.put(
+    "/projects/{project_id}/solution",
+    response_model=SolutionProposalResponse,
+    summary="Update solution proposal",
+)
+def update_solution_endpoint(
+    project_id: str,
+    solution_in: SolutionProposalUpdate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.save_solution(str(user_id), project_id, solution_in)
+
+
+# =============================================================================
+# PART 5: PROTOTYPE MANAGEMENT ENDPOINTS
+# =============================================================================
+
+@router.post(
+    "/projects/{project_id}/prototypes",
+    response_model=PrototypeResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register a technical prototype iteration",
+)
+def create_prototype_endpoint(
+    project_id: str,
+    prototype_in: PrototypeCreate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.create_prototype(str(user_id), project_id, prototype_in)
+
+
+@router.get(
+    "/projects/{project_id}/prototypes",
+    response_model=List[PrototypeResponse],
+    summary="List prototype iterations for a project",
+)
+def get_prototype_list_endpoint(
+    project_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_prototype_list(str(user_id), project_id)
+
+
+@router.get(
+    "/projects/{project_id}/prototypes/{prototype_id}",
+    response_model=PrototypeResponse,
+    summary="Get single prototype details",
+)
+def get_prototype_by_id_endpoint(
+    project_id: str,
+    prototype_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_prototype_by_id(str(user_id), project_id, prototype_id)
+
+
+@router.put(
+    "/projects/{project_id}/prototypes/{prototype_id}",
+    response_model=PrototypeResponse,
+    summary="Update prototype version or status",
+)
+def update_prototype_endpoint(
+    project_id: str,
+    prototype_id: str,
+    prototype_in: PrototypeUpdate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.update_prototype(str(user_id), project_id, prototype_id, prototype_in)
+
+
+@router.delete(
+    "/projects/{project_id}/prototypes/{prototype_id}",
+    summary="Delete prototype record and cloud asset",
+)
+def delete_prototype_endpoint(
+    project_id: str,
+    prototype_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.delete_prototype(str(user_id), project_id, prototype_id)
+
+
+@router.post(
+    "/projects/{project_id}/prototypes/upload-artifact",
+    summary="Upload prototype schematic/artifact file to Cloudinary",
+)
+async def upload_prototype_artifact_endpoint(
+    project_id: str,
+    file: UploadFile = File(...),
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    university_service._verify_project_ownership(str(user_id), project_id)
+    file_bytes = await file.read()
+    if len(file_bytes) > 25 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File size exceeds 25 MB limit.")
+    return cloudinary_service.upload_prototype_artifact(file_bytes, file.filename)
+
+
+# =============================================================================
+# PART 6: PILOT MANAGEMENT ENDPOINTS
+# =============================================================================
+
+@router.post(
+    "/projects/{project_id}/pilots",
+    response_model=PilotResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register a municipal/field pilot deployment",
+)
+def create_pilot_endpoint(
+    project_id: str,
+    pilot_in: PilotCreate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.create_pilot(str(user_id), project_id, pilot_in)
+
+
+@router.get(
+    "/projects/{project_id}/pilots",
+    response_model=List[PilotResponse],
+    summary="List all field pilots for a project",
+)
+def get_pilot_list_endpoint(
+    project_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_pilot_list(str(user_id), project_id)
+
+
+@router.get(
+    "/projects/{project_id}/pilots/{pilot_id}",
+    response_model=PilotResponse,
+    summary="Get single pilot details",
+)
+def get_pilot_by_id_endpoint(
+    project_id: str,
+    pilot_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_pilot_by_id(str(user_id), project_id, pilot_id)
+
+
+@router.put(
+    "/projects/{project_id}/pilots/{pilot_id}",
+    response_model=PilotResponse,
+    summary="Update field pilot observations or status",
+)
+def update_pilot_endpoint(
+    project_id: str,
+    pilot_id: str,
+    pilot_in: PilotUpdate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.update_pilot(str(user_id), project_id, pilot_id, pilot_in)
+
+
+@router.delete(
+    "/projects/{project_id}/pilots/{pilot_id}",
+    summary="Delete field pilot record",
+)
+def delete_pilot_endpoint(
+    project_id: str,
+    pilot_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.delete_pilot(str(user_id), project_id, pilot_id)
+
+
+# =============================================================================
+# PART 7: DEPLOYMENT READINESS ENDPOINTS
+# =============================================================================
+
+@router.get(
+    "/projects/{project_id}/deployment-readiness",
+    response_model=DeploymentReadinessResponse,
+    summary="Get deployment readiness assessment",
+)
+def get_deployment_readiness_endpoint(
+    project_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_deployment_readiness(str(user_id), project_id)
+
+
+@router.put(
+    "/projects/{project_id}/deployment-readiness",
+    response_model=DeploymentReadinessResponse,
+    summary="Update deployment readiness assessment",
+)
+def update_deployment_readiness_endpoint(
+    project_id: str,
+    readiness_in: DeploymentReadinessUpdate,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.update_deployment_readiness(str(user_id), project_id, readiness_in)
+
+
+# =============================================================================
+# PART 9: PROJECT ACTIVITY ENDPOINTS
+# =============================================================================
+
+@router.get(
+    "/projects/{project_id}/activity",
+    response_model=List[ProjectActivityResponse],
+    summary="Get recent real audit history for project",
+)
+def get_project_activity_endpoint(
+    project_id: str,
+    current_user: Dict[str, Any] = Depends(require_role(UserRole.UNIVERSITY)),
+):
+    user_id = current_user.get("id")
+    return university_service.get_project_activity(str(user_id), project_id)
 
 
 @router.get(

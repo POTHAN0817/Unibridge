@@ -150,6 +150,321 @@ export interface StudentUpdateInput {
   availability?: boolean;
 }
 
+export interface TeamMemberBrief {
+  id: string;
+  name: string;
+  email?: string;
+  department?: string;
+  designation?: string;
+  degree?: string;
+  skills?: string[];
+}
+
+export interface UniversityTeam {
+  id: string;
+  _id?: string;
+  university_id: string;
+  name: string;
+  challenge_id: string;
+  challenge_title?: string;
+  challenge_category?: string;
+  faculty_member_ids: string[];
+  student_member_ids: string[];
+  faculty_members: TeamMemberBrief[];
+  student_members: TeamMemberBrief[];
+  description?: string | null;
+  status: "forming" | "active" | "completed" | "archived" | string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TeamCreateInput {
+  name: string;
+  challenge_id: string;
+  faculty_member_ids: string[];
+  student_member_ids: string[];
+  description?: string;
+  status?: string;
+}
+
+export interface TeamUpdateInput {
+  name?: string;
+  challenge_id?: string;
+  faculty_member_ids?: string[];
+  student_member_ids?: string[];
+  description?: string;
+  status?: string;
+}
+
+export type ProjectStatus =
+  | "planning"
+  | "research"
+  | "solution_proposed"
+  | "prototype"
+  | "pilot"
+  | "deployment"
+  | "completed"
+  | "archived";
+
+export interface UniversityProject {
+  id: string;
+  _id?: string;
+  university_id: string;
+  name: string;
+  challenge_id: string;
+  team_id: string;
+  description?: string | null;
+  status: ProjectStatus | string;
+  start_date?: string | null;
+  target_date?: string | null;
+  created_at: string;
+  updated_at: string;
+  challenge_title?: string;
+  challenge_category?: string;
+  team_name?: string;
+  faculty_members?: TeamMemberBrief[];
+  student_members?: TeamMemberBrief[];
+  milestone_progress?: number;
+  milestones_count?: number;
+  completed_milestones_count?: number;
+}
+
+export interface ProjectCreateInput {
+  name: string;
+  challenge_id: string;
+  team_id: string;
+  description?: string;
+  status?: string;
+  start_date?: string;
+  target_date?: string;
+}
+
+export interface ProjectUpdateInput {
+  name?: string;
+  description?: string;
+  status?: string;
+  start_date?: string;
+  target_date?: string;
+}
+
+// Workspace Types
+export type MilestoneStatus = "pending" | "in_progress" | "completed" | "blocked" | string;
+
+export interface ProjectMilestone {
+  id: string;
+  _id?: string;
+  project_id: string;
+  university_id: string;
+  title: string;
+  description?: string | null;
+  status: MilestoneStatus;
+  due_date?: string | null;
+  completed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MilestoneCreateInput {
+  title: string;
+  description?: string;
+  status?: string;
+  due_date?: string;
+}
+
+export interface MilestoneUpdateInput {
+  title?: string;
+  description?: string;
+  status?: string;
+  due_date?: string;
+}
+
+export interface ProjectResearch {
+  id: string;
+  _id?: string;
+  project_id: string;
+  university_id: string;
+  title: string;
+  description?: string | null;
+  findings?: string | null;
+  methodology?: string | null;
+  references: string[];
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ResearchCreateInput {
+  title: string;
+  description?: string;
+  findings?: string;
+  methodology?: string;
+  references?: string[];
+}
+
+export interface ResearchUpdateInput {
+  title?: string;
+  description?: string;
+  findings?: string;
+  methodology?: string;
+  references?: string[];
+}
+
+export type SolutionStatus = "draft" | "under_review" | "approved" | "revision_required" | string;
+
+export interface ProjectSolution {
+  id: string;
+  _id?: string;
+  project_id: string;
+  university_id: string;
+  title: string;
+  problem_statement: string;
+  proposed_solution: string;
+  technical_approach?: string | null;
+  expected_outcomes?: string | null;
+  required_resources?: string | null;
+  risks?: string | null;
+  constraints?: string | null;
+  status: SolutionStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SolutionProposalInput {
+  title: string;
+  problem_statement: string;
+  proposed_solution: string;
+  technical_approach?: string;
+  expected_outcomes?: string;
+  required_resources?: string;
+  risks?: string;
+  constraints?: string;
+  status?: string;
+}
+
+export type PrototypeStatus = "planned" | "in_development" | "ready" | "tested" | "rejected" | string;
+
+export interface ProjectPrototype {
+  id: string;
+  _id?: string;
+  project_id: string;
+  university_id: string;
+  version: string;
+  title: string;
+  description?: string | null;
+  status: PrototypeStatus;
+  artifact_url?: string | null;
+  artifact_public_id?: string | null;
+  artifact_type?: string | null;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PrototypeCreateInput {
+  version: string;
+  title: string;
+  description?: string;
+  status?: string;
+  artifact_url?: string;
+  artifact_public_id?: string;
+  artifact_type?: string;
+}
+
+export interface PrototypeUpdateInput {
+  version?: string;
+  title?: string;
+  description?: string;
+  status?: string;
+  artifact_url?: string;
+  artifact_public_id?: string;
+  artifact_type?: string;
+}
+
+export type PilotStatus = "planned" | "preparation" | "active" | "completed" | "paused" | "cancelled" | string;
+
+export interface ProjectPilot {
+  id: string;
+  _id?: string;
+  project_id: string;
+  university_id: string;
+  title: string;
+  location: string;
+  objectives: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  status: PilotStatus;
+  observations?: string | null;
+  results?: string | null;
+  issues?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PilotCreateInput {
+  title: string;
+  location: string;
+  objectives: string;
+  start_date?: string;
+  end_date?: string;
+  status?: string;
+  observations?: string;
+  results?: string;
+  issues?: string;
+}
+
+export interface PilotUpdateInput {
+  title?: string;
+  location?: string;
+  objectives?: string;
+  start_date?: string;
+  end_date?: string;
+  status?: string;
+  observations?: string;
+  results?: string;
+  issues?: string;
+}
+
+export type ReadinessStatus = "not_ready" | "assessment" | "ready_for_deployment" | "deployment_in_progress" | "deployed" | string;
+
+export interface DeploymentReadiness {
+  id?: string;
+  _id?: string;
+  project_id: string;
+  university_id: string;
+  readiness_status: ReadinessStatus;
+  technical_readiness?: string | null;
+  infrastructure_requirements?: string | null;
+  estimated_cost?: string | null;
+  maintenance_requirements?: string | null;
+  deployment_requirements?: string | null;
+  blockers?: string | null;
+  notes?: string | null;
+  updated_at: string;
+}
+
+export interface DeploymentReadinessUpdateInput {
+  readiness_status?: string;
+  technical_readiness?: string;
+  infrastructure_requirements?: string;
+  estimated_cost?: string;
+  maintenance_requirements?: string;
+  deployment_requirements?: string;
+  blockers?: string;
+  notes?: string;
+}
+
+export interface ProjectActivity {
+  id: string;
+  _id?: string;
+  project_id: string;
+  university_id: string;
+  actor_id?: string;
+  action: string;
+  description: string;
+  created_at: string;
+}
+
+
 export interface UniversityProjectItem {
   title: string;
   description?: string;
