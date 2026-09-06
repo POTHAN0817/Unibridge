@@ -23,9 +23,15 @@ import {
   ShieldCheck,
   Check,
   X,
+  FolderGit2,
 } from "lucide-react";
 import { universityService } from "../../services/universityService";
-import { UniversityChallengeDossier, UniversityInterest } from "../../types";
+import {
+  UniversityChallengeDossier,
+  UniversityInterest,
+  UniversityTeam,
+  UniversityProject,
+} from "../../types";
 import { DashboardHeader } from "../../components/dashboard/DashboardHeader";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { PriorityBadge } from "../../components/common/PriorityBadge";
@@ -38,6 +44,8 @@ export default function UniversityChallengeDetails() {
 
   const [dossier, setDossier] = useState<UniversityChallengeDossier | null>(null);
   const [interest, setInterest] = useState<UniversityInterest | null>(null);
+  const [linkedTeams, setLinkedTeams] = useState<UniversityTeam[]>([]);
+  const [linkedProjects, setLinkedProjects] = useState<UniversityProject[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -60,11 +68,17 @@ export default function UniversityChallengeDetails() {
     setNotFound(false);
 
     try {
-      const data = await universityService.getUniversityChallengeDetails(challengeId);
+      const [data, teamsData, projectsData] = await Promise.all([
+        universityService.getUniversityChallengeDetails(challengeId),
+        universityService.getTeamList().catch(() => []),
+        universityService.getProjectList().catch(() => []),
+      ]);
       setDossier(data);
       if (data.interest) {
         setInterest(data.interest);
       }
+      setLinkedTeams((teamsData || []).filter((t: UniversityTeam) => t.challenge_id === challengeId));
+      setLinkedProjects((projectsData || []).filter((p: UniversityProject) => p.challenge_id === challengeId));
     } catch (err: any) {
       console.error("Failed to load university challenge dossier:", err);
       if (err?.status === 404) {
@@ -559,7 +573,7 @@ export default function UniversityChallengeDetails() {
               </p>
 
               {interest ? (
-                <div className="bg-white/10 rounded-2xl p-4 border border-white/15 space-y-2.5">
+                <div className="bg-white/10 rounded-2xl p-4 border border-white/15 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-purple-200">Adoption Status:</span>
                     <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 uppercase tracking-wide flex items-center gap-1">
@@ -574,8 +588,83 @@ export default function UniversityChallengeDetails() {
                       "{interest.message}"
                     </p>
                   )}
-                  <div className="pt-1 text-[11px] text-purple-200 flex items-center gap-1">
-                    <CheckCircle2 size={13} className="text-emerald-400" /> Interest is recorded in UniBridge database
+
+                  {/* University Progression Stepper: Interest -> Team -> Project */}
+                  <div className="pt-3 border-t border-white/15 space-y-2.5">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-200 block">
+                      University Progression: Interest → Team → Project
+                    </span>
+
+                    {/* Step 1: Interest */}
+                    <div className="flex items-center gap-2 text-xs bg-white/5 p-2 rounded-xl border border-white/10">
+                      <CheckCircle2 size={14} className="text-emerald-400 shrink-0" />
+                      <div className="flex-1">
+                        <span className="text-white font-bold">1. Interest Expressed</span>
+                        <span className="text-[10px] text-purple-300 block">Status: {interest.status.toUpperCase()}</span>
+                      </div>
+                    </div>
+
+                    {/* Step 2: Innovation Team */}
+                    <div className="flex items-start gap-2 text-xs bg-white/5 p-2 rounded-xl border border-white/10">
+                      {linkedTeams.length > 0 ? (
+                        <>
+                          <CheckCircle2 size={14} className="text-emerald-400 shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <span className="text-white font-bold">2. Team Formed: {linkedTeams[0].name}</span>
+                            <span className="text-[10px] text-purple-300 block">
+                              {linkedTeams[0].faculty_members?.length || 0} Faculty · {linkedTeams[0].student_members?.length || 0} Students
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-3.5 h-3.5 rounded-full border border-purple-400/50 flex items-center justify-center shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <span className="text-purple-300 font-medium">2. Innovation Team Pending</span>
+                            <Link
+                              to="/university/teams"
+                              className="text-[11px] text-amber-300 hover:text-amber-200 font-bold block mt-0.5"
+                            >
+                              + Form Innovation Team
+                            </Link>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Step 3: Project Workspace */}
+                    <div className="flex items-start gap-2 text-xs bg-white/5 p-2 rounded-xl border border-white/10">
+                      {linkedProjects.length > 0 ? (
+                        <>
+                          <CheckCircle2 size={14} className="text-emerald-400 shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <span className="text-white font-bold">3. Project Active: {linkedProjects[0].name}</span>
+                            <span className="text-[10px] text-purple-300 block capitalize">
+                              Phase: {linkedProjects[0].status.replace("_", " ")} · {linkedProjects[0].milestone_progress ?? 0}% Milestones
+                            </span>
+                            <Link
+                              to={`/university/projects/${linkedProjects[0].id}`}
+                              className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-300 hover:text-amber-200 mt-1"
+                            >
+                              Enter Project Workspace <ArrowRight size={11} />
+                            </Link>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-3.5 h-3.5 rounded-full border border-purple-400/50 flex items-center justify-center shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <span className="text-purple-300 font-medium">3. Project Workspace Pending</span>
+                            <Link
+                              to="/university/projects"
+                              className="text-[11px] text-amber-300 hover:text-amber-200 font-bold block mt-0.5"
+                            >
+                              + Launch Project Workspace
+                            </Link>
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : (

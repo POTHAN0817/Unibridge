@@ -148,3 +148,59 @@ def delete_challenge_image(public_id: str) -> bool:
     except Exception as exc:
         logger.error(f"Failed to delete Cloudinary image {public_id}: {type(exc).__name__}")
         return False
+
+
+def upload_prototype_artifact(file_bytes: bytes, filename: Optional[str] = None) -> dict[str, Any]:
+    """
+    Uploads a prototype artifact (schematic, document, image, CAD, model, etc.) to Cloudinary.
+    Folder: unibridge/prototypes/{unique_id}
+    Uses resource_type="auto" to seamlessly support diverse technical artifact formats.
+    """
+    unique_id = uuid.uuid4().hex
+    public_id = f"unibridge/prototypes/{unique_id}"
+
+    try:
+        upload_result = cloudinary.uploader.upload(
+            file_bytes,
+            public_id=public_id,
+            resource_type="auto",
+            overwrite=True,
+        )
+
+        secure_url = upload_result.get("secure_url") or upload_result.get("url")
+        if not secure_url:
+            raise ValueError("Cloudinary upload did not return a valid URL.")
+
+        return {
+            "artifact_url": secure_url,
+            "artifact_public_id": upload_result.get("public_id", public_id),
+            "artifact_type": upload_result.get("resource_type", "raw"),
+            "format": upload_result.get("format"),
+            "bytes": upload_result.get("bytes"),
+        }
+    except Exception as exc:
+        logger.error(f"Cloudinary artifact upload failed for {public_id}: {type(exc).__name__}")
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Failed to upload prototype artifact to cloud storage.",
+        )
+
+
+def delete_prototype_artifact(public_id: str, resource_type: str = "auto") -> bool:
+    """
+    Deletes a prototype artifact from Cloudinary.
+    """
+    if not public_id:
+        return False
+
+    try:
+        result = cloudinary.uploader.destroy(public_id, resource_type=resource_type)
+        if result.get("result") != "ok":
+            result = cloudinary.uploader.destroy(public_id, resource_type="raw")
+        if result.get("result") != "ok":
+            result = cloudinary.uploader.destroy(public_id, resource_type="image")
+        return result.get("result") == "ok"
+    except Exception as exc:
+        logger.error(f"Failed to delete Cloudinary artifact {public_id}: {type(exc).__name__}")
+        return False
+
