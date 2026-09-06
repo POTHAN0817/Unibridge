@@ -104,10 +104,43 @@ def get_project_industry_funding_collection():
     return db["project_industry_funding"]
 
 
+def get_government_profiles_collection():
+    return db["government_profiles"]
+
+
+def get_government_challenge_reviews_collection():
+    return db["government_challenge_reviews"]
+
+
+def get_government_activity_collection():
+    return db["government_activity"]
+
+
 def init_db_indexes():
     """
     Safely initialize required database indexes during startup.
     """
+    govt_profiles = get_government_profiles_collection()
+    govt_profiles.create_index("user_id", unique=True)
+    govt_profiles.create_index("jurisdiction_level")
+    govt_profiles.create_index("state")
+    govt_profiles.create_index("district")
+    govt_profiles.create_index("department_type")
+    govt_profiles.create_index([("created_at", -1)])
+
+    govt_reviews = get_government_challenge_reviews_collection()
+    govt_reviews.create_index([("challenge_id", 1), ("government_user_id", 1)], unique=True)
+    govt_reviews.create_index("challenge_id")
+    govt_reviews.create_index("government_user_id")
+    govt_reviews.create_index("decision")
+    govt_reviews.create_index([("reviewed_at", -1)])
+
+    govt_activity = get_government_activity_collection()
+    govt_activity.create_index([("created_at", -1)])
+    govt_activity.create_index("challenge_id")
+    govt_activity.create_index("government_user_id")
+    govt_activity.create_index("action")
+
     industry_profiles = get_industry_profiles_collection()
     industry_profiles.create_index("user_id", unique=True)
     industry_profiles.create_index("company_name")

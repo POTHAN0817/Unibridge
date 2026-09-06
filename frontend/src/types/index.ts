@@ -1215,6 +1215,212 @@ export interface IndustryCollaborationSummary {
   funding_proposals_count: number;
 }
 
+// ============================================================================
+// Government Module (Step 8A Foundation)
+// ============================================================================
+export type JurisdictionLevel = "national" | "state" | "district" | "city" | "local";
+
+export interface GovernmentProfile {
+  id: string;
+  user_id: string;
+  department_name: string;
+  department_type: string;
+  designation: string;
+  jurisdiction: string;
+  jurisdiction_level: JurisdictionLevel;
+  state?: string;
+  district?: string;
+  city?: string;
+  official_email: string;
+  phone?: string;
+  description?: string;
+  areas_of_focus: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GovernmentProfileCreateInput {
+  department_name: string;
+  department_type: string;
+  designation: string;
+  jurisdiction: string;
+  jurisdiction_level: JurisdictionLevel;
+  state?: string;
+  district?: string;
+  city?: string;
+  official_email: string;
+  phone?: string;
+  description?: string;
+  areas_of_focus: string[];
+}
+
+export interface GovernmentProfileUpdateInput {
+  department_name?: string;
+  department_type?: string;
+  designation?: string;
+  jurisdiction?: string;
+  jurisdiction_level?: JurisdictionLevel;
+  state?: string;
+  district?: string;
+  city?: string;
+  official_email?: string;
+  phone?: string;
+  description?: string;
+  areas_of_focus?: string[];
+}
+
+export interface GovernmentDashboardMetrics {
+  total_challenges: number;
+  submitted_challenges: number;
+  ai_processed_challenges: number;
+  validated_challenges: number;
+  total_university_projects: number;
+  active_university_projects: number;
+  pilot_projects: number;
+  deployed_projects: number;
+  total_industry_partnerships: number;
+  accepted_industry_partnerships: number;
+  active_mentorships: number;
+  resource_contributions: number;
+  funding_proposals: number;
+}
+
+export interface PlatformActivityItem {
+  id: string;
+  project_id: string;
+  action: string;
+  description: string;
+  created_at: string;
+}
+
+// ============================================================================
+// Step 8B: Government Challenge Monitoring & Validation Types
+// ============================================================================
+
+export type GovernmentReviewDecision = "pending" | "validated" | "rejected" | "clarification_required";
+
+export interface GovernmentChallengeReview {
+  id: string;
+  challenge_id: string;
+  government_user_id: string;
+  decision: GovernmentReviewDecision;
+  review_note?: string | null;
+  clarification_request?: string | null;
+  reviewed_at: string;
+  created_at: string;
+  updated_at: string;
+  officer_name?: string | null;
+  department_name?: string | null;
+}
+
+export interface GovernmentChallengeReviewCreateInput {
+  decision: GovernmentReviewDecision;
+  review_note?: string | null;
+  clarification_request?: string | null;
+}
+
+export interface GovernmentChallengeReviewUpdateInput {
+  decision?: GovernmentReviewDecision;
+  review_note?: string | null;
+  clarification_request?: string | null;
+}
+
+export interface GovernmentChallengeSummary {
+  challenge_id: string;
+  title: string;
+  description: string;
+  category?: string | null;
+  subcategory?: string | null;
+  location?: {
+    district?: string;
+    state?: string;
+    latitude?: number;
+    longitude?: number;
+    address?: string;
+  } | null;
+  submitted_at: string;
+  status: string;
+  ai_status?: string | null;
+  affected_people?: number | null;
+  urgency?: string | null;
+  citizen_tags?: string[];
+  ai_category?: string | null;
+  ai_confidence?: number | null;
+  keywords: string[];
+  required_skills: string[];
+  priority_score?: number | null;
+  priority_level?: string | null;
+  priority_explanation?: string | null;
+  duplicate_status?: string | null;
+  highest_similarity?: number | null;
+  matched_challenge_id?: string | null;
+  government_review?: GovernmentChallengeReview | null;
+  government_review_decision: GovernmentReviewDecision;
+  government_review_date?: string | null;
+  has_project: boolean;
+  project_name?: string | null;
+  project_status?: string | null;
+  university_name?: string | null;
+}
+
+export interface GovernmentChallengesSummaryCounts {
+  total: number;
+  pending: number;
+  validated: number;
+  clarification_required: number;
+  rejected: number;
+}
+
+export interface GovernmentChallengesPage {
+  items: GovernmentChallengeSummary[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  summary_counts: GovernmentChallengesSummaryCounts;
+}
+
+export interface GovernmentProjectRelationship {
+  project_id: string;
+  project_name: string;
+  status: string;
+  university_id: string;
+  university_name?: string | null;
+  team_id?: string | null;
+  team_name?: string | null;
+  lifecycle_stage?: string | null;
+  start_date?: string | null;
+  target_date?: string | null;
+}
+
+export interface GovernmentChallengeDetail {
+  challenge_id: string;
+  title: string;
+  description: string;
+  category?: string | null;
+  subcategory?: string | null;
+  location?: {
+    district?: string;
+    state?: string;
+    latitude?: number;
+    longitude?: number;
+    address?: string;
+  } | null;
+  affected_people?: number | null;
+  urgency?: string | null;
+  citizen_tags?: string[];
+  created_at: string;
+  updated_at: string;
+  challenge_status: string;
+  image_url?: string | null;
+  ai_analysis?: Record<string, any> | null;
+  duplicate_analysis?: Record<string, any> | null;
+  priority_analysis?: Record<string, any> | null;
+  project_relationship?: GovernmentProjectRelationship | null;
+  government_review?: GovernmentChallengeReview | null;
+}
+
+
 
 
 

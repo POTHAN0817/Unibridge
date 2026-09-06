@@ -52,6 +52,7 @@ import IndustryImpact from "../pages/industry/IndustryImpact";
 import IndustryProfile from "../pages/industry/IndustryProfile";
 
 // Government Pages
+import GovernmentDashboard from "../pages/government/GovernmentDashboard";
 import GovCommandCenter from "../pages/government/GovCommandCenter";
 import GovernmentChallenges from "../pages/government/GovernmentChallenges";
 import GovernmentChallengeDetails from "../pages/government/GovernmentChallengeDetails";
@@ -300,10 +301,18 @@ export const AppRoutes: React.FC = () => {
 
         {/* GOVERNMENT PROTECTED ROUTES */}
         <Route
+          path="/government"
+          element={
+            <ProtectedRoute allowedRoles={["government"]}>
+              <GovernmentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/government/dashboard"
           element={
             <ProtectedRoute allowedRoles={["government"]}>
-              <GovCommandCenter />
+              <GovernmentDashboard />
             </ProtectedRoute>
           }
         />
