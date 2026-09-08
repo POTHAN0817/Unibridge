@@ -36,12 +36,11 @@ export const roleNavigation: Record<UserRole, NavItemConfig[]> = {
   government: [
     { label: "Dashboard", path: "/government/dashboard" },
     { label: "Challenges", path: "/government/challenges" },
-    { label: "Validation", path: "/government/validation" },
     { label: "Projects", path: "/government/projects" },
-    { label: "Universities", path: "/government/universities" },
-    { label: "Industry", path: "/government/industry" },
+    { label: "Collaborations", path: "/government/collaborations" },
+    { label: "Monitoring", path: "/government/monitoring" },
     { label: "Analytics", path: "/government/analytics" },
-    { label: "Impact", path: "/government/impact" },
+    { label: "Actions", path: "/government/actions" },
     { label: "Profile", path: "/government/profile" },
   ],
 };

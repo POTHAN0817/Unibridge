@@ -116,6 +116,10 @@ def get_government_activity_collection():
     return db["government_activity"]
 
 
+def get_government_actions_collection():
+    return db["government_actions"]
+
+
 def init_db_indexes():
     """
     Safely initialize required database indexes during startup.
@@ -140,6 +144,17 @@ def init_db_indexes():
     govt_activity.create_index("challenge_id")
     govt_activity.create_index("government_user_id")
     govt_activity.create_index("action")
+    govt_activity.create_index("target_id")
+
+    govt_actions = get_government_actions_collection()
+    govt_actions.create_index("government_user_id")
+    govt_actions.create_index("status")
+    govt_actions.create_index("priority")
+    govt_actions.create_index("action_type")
+    govt_actions.create_index("target_type")
+    govt_actions.create_index("target_id")
+    govt_actions.create_index([("government_user_id", 1), ("status", 1)])
+    govt_actions.create_index([("created_at", -1)])
 
     industry_profiles = get_industry_profiles_collection()
     industry_profiles.create_index("user_id", unique=True)

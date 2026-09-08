@@ -53,16 +53,15 @@ import IndustryProfile from "../pages/industry/IndustryProfile";
 
 // Government Pages
 import GovernmentDashboard from "../pages/government/GovernmentDashboard";
-import GovCommandCenter from "../pages/government/GovCommandCenter";
 import GovernmentChallenges from "../pages/government/GovernmentChallenges";
 import GovernmentChallengeDetails from "../pages/government/GovernmentChallengeDetails";
-import GovernmentValidation from "../pages/government/GovernmentValidation";
 import GovernmentProjects from "../pages/government/GovernmentProjects";
-import GovernmentProjectMonitoring from "../pages/government/GovernmentProjectMonitoring";
-import GovernmentUniversities from "../pages/government/GovernmentUniversities";
-import GovernmentIndustry from "../pages/government/GovernmentIndustry";
+import GovernmentProjectDetails from "../pages/government/GovernmentProjectDetails";
+import GovernmentCollaborations from "../pages/government/GovernmentCollaborations";
+import GovernmentCollaborationDetails from "../pages/government/GovernmentCollaborationDetails";
+import GovernmentMonitoring from "../pages/government/GovernmentMonitoring";
 import GovernmentAnalytics from "../pages/government/GovernmentAnalytics";
-import GovernmentImpact from "../pages/government/GovernmentImpact";
+import GovernmentActions from "../pages/government/GovernmentActions";
 import GovernmentProfile from "../pages/government/GovernmentProfile";
 
 export const AppRoutes: React.FC = () => {
@@ -333,14 +332,6 @@ export const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/government/validation"
-          element={
-            <ProtectedRoute allowedRoles={["government"]}>
-              <GovernmentValidation />
-            </ProtectedRoute>
-          }
-        />
-        <Route
           path="/government/projects"
           element={
             <ProtectedRoute allowedRoles={["government"]}>
@@ -352,23 +343,31 @@ export const AppRoutes: React.FC = () => {
           path="/government/projects/:projectId"
           element={
             <ProtectedRoute allowedRoles={["government"]}>
-              <GovernmentProjectMonitoring />
+              <GovernmentProjectDetails />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/government/universities"
+          path="/government/collaborations"
           element={
             <ProtectedRoute allowedRoles={["government"]}>
-              <GovernmentUniversities />
+              <GovernmentCollaborations />
             </ProtectedRoute>
           }
         />
         <Route
-          path="/government/industry"
+          path="/government/collaborations/:partnershipId"
           element={
             <ProtectedRoute allowedRoles={["government"]}>
-              <GovernmentIndustry />
+              <GovernmentCollaborationDetails />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/government/monitoring"
+          element={
+            <ProtectedRoute allowedRoles={["government"]}>
+              <GovernmentMonitoring />
             </ProtectedRoute>
           }
         />
@@ -381,10 +380,10 @@ export const AppRoutes: React.FC = () => {
           }
         />
         <Route
-          path="/government/impact"
+          path="/government/actions"
           element={
             <ProtectedRoute allowedRoles={["government"]}>
-              <GovernmentImpact />
+              <GovernmentActions />
             </ProtectedRoute>
           }
         />
@@ -395,6 +394,24 @@ export const AppRoutes: React.FC = () => {
               <GovernmentProfile />
             </ProtectedRoute>
           }
+        />
+
+        {/* Backward Compatibility Redirects */}
+        <Route
+          path="/government/validation"
+          element={<Navigate to="/government/challenges?government_review_status=pending" replace />}
+        />
+        <Route
+          path="/government/universities"
+          element={<Navigate to="/government/projects" replace />}
+        />
+        <Route
+          path="/government/industry"
+          element={<Navigate to="/government/collaborations" replace />}
+        />
+        <Route
+          path="/government/impact"
+          element={<Navigate to="/government/analytics" replace />}
         />
 
         {/* Catch-all 404 Route */}

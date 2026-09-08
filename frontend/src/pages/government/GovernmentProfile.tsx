@@ -155,6 +155,44 @@ export default function GovernmentProfile() {
 
       <PageContainer maxWidth="lg">
         <div className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-10 shadow-xs">
+          {/* Administrative Overview KPI Strip */}
+          {profile && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 p-4 bg-emerald-50/60 border border-emerald-100 rounded-2xl">
+              <div>
+                <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider block">
+                  Jurisdiction Level
+                </span>
+                <span className="text-base font-bold text-gray-900 capitalize">
+                  {profile.jurisdiction_level}
+                </span>
+              </div>
+              <div>
+                <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider block">
+                  Official Sector
+                </span>
+                <span className="text-base font-bold text-gray-900 truncate block">
+                  {profile.department_type}
+                </span>
+              </div>
+              <div>
+                <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider block">
+                  Completed Reviews
+                </span>
+                <span className="text-base font-bold text-emerald-900 font-mono">
+                  {profile.reviews_completed_count ?? 0}
+                </span>
+              </div>
+              <div>
+                <span className="text-[11px] font-semibold text-emerald-800 uppercase tracking-wider block">
+                  Active Actions
+                </span>
+                <span className="text-base font-bold text-emerald-900 font-mono">
+                  {profile.open_actions_count ?? 0}
+                </span>
+              </div>
+            </div>
+          )}
+
           {saved && (
             <div className="mb-6 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800 flex items-center gap-2">
               <CheckCircle2 size={16} /> Official government profile saved to database successfully!

@@ -1237,6 +1237,8 @@ export interface GovernmentProfile {
   areas_of_focus: string[];
   created_at: string;
   updated_at: string;
+  open_actions_count?: number;
+  reviews_completed_count?: number;
 }
 
 export interface GovernmentProfileCreateInput {
@@ -1419,6 +1421,533 @@ export interface GovernmentChallengeDetail {
   project_relationship?: GovernmentProjectRelationship | null;
   government_review?: GovernmentChallengeReview | null;
 }
+
+// ============================================================================
+// Step 8C: Government University Project Monitoring Types
+// ============================================================================
+
+export interface GovernmentProjectSummary {
+  project_id: string;
+  name: string;
+  title: string;
+  description?: string | null;
+  university_id: string;
+  university_name?: string | null;
+  challenge_id?: string | null;
+  challenge_title?: string | null;
+  category?: string | null;
+  project_status: string;
+  lifecycle_stage: string;
+  created_at: string;
+  updated_at: string;
+  start_date?: string | null;
+  target_date?: string | null;
+  team_id?: string | null;
+  team_name?: string | null;
+  team_size: number;
+  faculty_count: number;
+  student_count: number;
+  milestone_count: number;
+  completed_milestone_count: number;
+  prototype_count: number;
+  pilot_count: number;
+  deployment_readiness_state?: string | null;
+  industry_partnership_count: number;
+  active_mentorship_count: number;
+  resource_contribution_count: number;
+  funding_proposal_count: number;
+}
+
+export interface GovernmentProjectsPage {
+  items: GovernmentProjectSummary[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  status_counts: Record<string, number>;
+}
+
+export interface GovernmentProjectDossier {
+  overview: {
+    project_id: string;
+    name: string;
+    description?: string | null;
+    status: string;
+    lifecycle_stage: string;
+    start_date?: string | null;
+    target_date?: string | null;
+    created_at: string;
+    updated_at: string;
+  };
+  university: {
+    university_id: string;
+    name: string;
+    short_name?: string | null;
+    location?: {
+      city?: string;
+      state?: string;
+      country?: string;
+    } | null;
+    website?: string | null;
+  };
+  linked_challenge?: {
+    challenge_id: string;
+    title: string;
+    description: string;
+    category?: string | null;
+    subcategory?: string | null;
+    urgency?: string | null;
+    affected_people?: number | null;
+    location?: any;
+    priority_level?: string | null;
+    priority_score?: number | null;
+    priority_explanation?: string | null;
+    submitted_at: string;
+  } | null;
+  team?: {
+    team_id: string;
+    name: string;
+    faculty_count: number;
+    student_count: number;
+    faculty_members: any[];
+    student_members: any[];
+  } | null;
+  milestones: Array<{
+    id: string;
+    title: string;
+    description?: string | null;
+    status: string;
+    due_date?: string | null;
+    completed_at?: string | null;
+    created_at: string;
+  }>;
+  research: Array<{
+    id: string;
+    title: string;
+    description?: string | null;
+    findings?: string | null;
+    methodology?: string | null;
+    references?: string[];
+    created_at: string;
+  }>;
+  solution?: {
+    id: string;
+    title: string;
+    problem_statement: string;
+    proposed_solution: string;
+    technical_approach?: string | null;
+    expected_outcomes?: string | null;
+    required_resources?: string | null;
+    risks?: string | null;
+    constraints?: string | null;
+    status: string;
+    created_at: string;
+    updated_at: string;
+  } | null;
+  prototypes: Array<{
+    id: string;
+    version: string;
+    title: string;
+    description?: string | null;
+    status: string;
+    artifact_url?: string | null;
+    artifact_type?: string | null;
+    created_at: string;
+  }>;
+  pilots: Array<{
+    id: string;
+    title: string;
+    location: string;
+    objectives: string;
+    status: string;
+    start_date?: string | null;
+    end_date?: string | null;
+    observations?: string | null;
+    results?: string | null;
+    issues?: string | null;
+    created_at: string;
+  }>;
+  deployment_readiness?: {
+    id?: string;
+    readiness_status: string;
+    technical_readiness?: string | null;
+    infrastructure_requirements?: string | null;
+    estimated_cost?: string | null;
+    maintenance_requirements?: string | null;
+    deployment_requirements?: string | null;
+    blockers?: string | null;
+    notes?: string | null;
+    updated_at: string;
+  } | null;
+  industry_collaboration: {
+    partnerships: Array<{
+      partnership_id: string;
+      company_name: string;
+      status: string;
+      message?: string | null;
+      created_at: string;
+    }>;
+    partnerships_count: number;
+    mentors: Array<{
+      id: string;
+      objectives: string;
+      focus_areas: string[];
+      status: string;
+      created_at: string;
+    }>;
+    mentorships_count: number;
+    resources: Array<{
+      id: string;
+      title: string;
+      resource_type: string;
+      description: string;
+      quantity_or_scope?: string | null;
+      status: string;
+      provided_at?: string | null;
+      created_at: string;
+    }>;
+    resources_count: number;
+    funding: Array<{
+      id: string;
+      title: string;
+      description: string;
+      amount: number;
+      currency: string;
+      funding_type: string;
+      status: string;
+      proposed_at: string;
+    }>;
+    funding_count: number;
+  };
+  recent_activity: Array<{
+    id: string;
+    action: string;
+    description: string;
+    created_at: string;
+  }>;
+}
+
+// ============================================================================
+// Step 8D: Industry Collaboration Monitoring Types
+// ============================================================================
+
+export interface GovernmentCollaborationSummary {
+  partnership_id: string;
+  project_id: string;
+  project_name?: string | null;
+  university_id: string;
+  university_name?: string | null;
+  industry_user_id: string;
+  company_name?: string | null;
+  industry_sector?: string | null;
+  partnership_status: string;
+  mentor_count: number;
+  active_mentorship_count: number;
+  resource_contribution_count: number;
+  accepted_resource_count: number;
+  funding_proposal_count: number;
+  approved_funding_count: number;
+  total_funding_amount: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GovernmentCollaborationsPage {
+  items: GovernmentCollaborationSummary[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  summary_counts: Record<string, number>;
+}
+
+export interface GovernmentCollaborationDetail {
+  partnership_id: string;
+  status: string;
+  message?: string | null;
+  created_at: string;
+  updated_at: string;
+  industry_partner: {
+    industry_user_id: string;
+    company_name: string;
+    short_name?: string | null;
+    industry_sector?: string | null;
+    sub_sectors: string[];
+    headquarters_location?: string | null;
+    operating_locations: string[];
+    website?: string | null;
+    expertise: string[];
+    technologies: string[];
+  };
+  university: {
+    university_id: string;
+    name: string;
+    location?: any;
+  };
+  project: {
+    project_id: string;
+    name: string;
+    description?: string | null;
+    status: string;
+    lifecycle_stage: string;
+    challenge_title?: string | null;
+    challenge_category?: string | null;
+  };
+  mentors: Array<{
+    id: string;
+    expert_name: string;
+    expert_designation?: string | null;
+    focus_areas: string[];
+    objectives: string;
+    status: string;
+    created_at: string;
+  }>;
+  resources: Array<{
+    id: string;
+    title: string;
+    resource_type: string;
+    description: string;
+    quantity_or_scope?: string | null;
+    status: string;
+    provided_at?: string | null;
+    created_at: string;
+  }>;
+  funding_proposals: Array<{
+    id: string;
+    title: string;
+    description: string;
+    amount: number;
+    currency: string;
+    funding_type: string;
+    status: string;
+    proposed_at: string;
+  }>;
+  activity: Array<{
+    id: string;
+    action: string;
+    description: string;
+    created_at: string;
+  }>;
+}
+
+// ============================================================================
+// Step 8E: Pilot & Deployment Oversight Types
+// ============================================================================
+
+export interface GovernmentLifecycleMonitoringSummary {
+  total_projects: number;
+  planning: number;
+  research: number;
+  solution_proposed: number;
+  prototype: number;
+  pilot: number;
+  deployment_ready: number;
+  deployed: number;
+  completed: number;
+}
+
+export interface GovernmentPilotItem {
+  pilot_id: string;
+  project_id: string;
+  project_name?: string | null;
+  university_id: string;
+  university_name?: string | null;
+  category?: string | null;
+  title: string;
+  location: string;
+  objectives: string;
+  status: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  observations?: string | null;
+  results?: string | null;
+  issues?: string | null;
+  created_at: string;
+}
+
+export interface GovernmentPilotsPage {
+  items: GovernmentPilotItem[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  status_counts: Record<string, number>;
+}
+
+export interface GovernmentDeploymentItem {
+  project_id: string;
+  project_name: string;
+  university_id: string;
+  university_name?: string | null;
+  category?: string | null;
+  lifecycle_stage: string;
+  project_status: string;
+  readiness_status: string;
+  technical_readiness?: string | null;
+  infrastructure_requirements?: string | null;
+  estimated_cost?: string | null;
+  maintenance_requirements?: string | null;
+  deployment_requirements?: string | null;
+  blockers?: string | null;
+  milestones_count: number;
+  completed_milestones_count: number;
+  updated_at: string;
+}
+
+export interface GovernmentDeploymentsPage {
+  items: GovernmentDeploymentItem[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  status_counts: Record<string, number>;
+}
+
+// ============================================================================
+// Step 8F: Regional & Category Analytics Types
+// ============================================================================
+
+export interface GovernmentAnalyticsItem {
+  key: string;
+  label: string;
+  count: number;
+  percentage?: number | null;
+}
+
+export interface GovernmentAnalyticsResponse {
+  challenges_by_category: GovernmentAnalyticsItem[];
+  challenges_by_priority: GovernmentAnalyticsItem[];
+  challenges_by_status: GovernmentAnalyticsItem[];
+  challenges_by_ai_status: GovernmentAnalyticsItem[];
+  challenges_by_government_review: GovernmentAnalyticsItem[];
+  projects_by_category: GovernmentAnalyticsItem[];
+  projects_by_status: GovernmentAnalyticsItem[];
+  projects_by_lifecycle_stage: GovernmentAnalyticsItem[];
+  projects_by_state: GovernmentAnalyticsItem[];
+  projects_by_district: GovernmentAnalyticsItem[];
+  partnerships_by_status: GovernmentAnalyticsItem[];
+  pilots_by_status: GovernmentAnalyticsItem[];
+  total_challenges: number;
+  total_projects: number;
+  total_partnerships: number;
+  total_pilots: number;
+}
+
+// ============================================================================
+// Step 8G: Government Actions & Decisions Types
+// ============================================================================
+
+export type GovernmentActionType =
+  | "review_followup"
+  | "clarification_followup"
+  | "monitoring_required"
+  | "policy_attention"
+  | "coordination_required"
+  | "deployment_followup"
+  | "pilot_followup"
+  | "other";
+
+export type GovernmentActionTargetType = "challenge" | "project" | "partnership" | "pilot" | "deployment";
+export type GovernmentActionStatus = "open" | "in_progress" | "completed" | "cancelled";
+export type GovernmentActionPriority = "low" | "medium" | "high" | "critical";
+
+export interface GovernmentActionCreateInput {
+  action_type: GovernmentActionType;
+  target_type: GovernmentActionTargetType;
+  target_id: string;
+  title: string;
+  description?: string;
+  priority?: GovernmentActionPriority;
+  due_date?: string;
+}
+
+export interface GovernmentActionUpdateInput {
+  action_type?: GovernmentActionType;
+  title?: string;
+  description?: string;
+  status?: GovernmentActionStatus;
+  priority?: GovernmentActionPriority;
+  due_date?: string;
+}
+
+export interface GovernmentAction {
+  id: string;
+  government_user_id: string;
+  action_type: GovernmentActionType;
+  target_type: GovernmentActionTargetType;
+  target_id: string;
+  target_title?: string | null;
+  title: string;
+  description?: string | null;
+  status: GovernmentActionStatus;
+  priority: GovernmentActionPriority;
+  due_date?: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string | null;
+}
+
+export interface GovernmentActionsSummaryCounts {
+  total: number;
+  open: number;
+  in_progress: number;
+  completed: number;
+  cancelled: number;
+  critical_priority: number;
+}
+
+export interface GovernmentActionsPage {
+  items: GovernmentAction[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  summary_counts: GovernmentActionsSummaryCounts;
+}
+
+// ============================================================================
+// Step 8H: Dashboard Priorities
+// ============================================================================
+
+export interface GovernmentDashboardPriorities {
+  pending_reviews: Array<{
+    id: string;
+    title: string;
+    category?: string | null;
+    urgency?: string | null;
+    created_at: string;
+  }>;
+  clarification_challenges: Array<{
+    id: string;
+    title: string;
+    category?: string | null;
+    created_at: string;
+  }>;
+  high_priority_challenges: Array<{
+    id: string;
+    title: string;
+    category?: string | null;
+    priority_level: string;
+    created_at: string;
+  }>;
+  open_actions: Array<{
+    id: string;
+    title: string;
+    action_type: string;
+    target_type: string;
+    target_id: string;
+    priority: string;
+    due_date?: string | null;
+  }>;
+  active_pilots: Array<{
+    id: string;
+    title: string;
+    project_id: string;
+    status: string;
+    location: string;
+  }>;
+}
+
 
 
 
