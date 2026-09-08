@@ -52,6 +52,8 @@ class GovernmentProfileResponse(BaseModel):
     areas_of_focus: List[str] = []
     created_at: str
     updated_at: str
+    open_actions_count: Optional[int] = None
+    reviews_completed_count: Optional[int] = None
 
 
 class GovernmentDashboardMetrics(BaseModel):
@@ -218,4 +220,290 @@ class GovernmentChallengeDetail(BaseModel):
     priority_analysis: Optional[dict] = None
     project_relationship: Optional[GovernmentProjectRelationship] = None
     government_review: Optional[GovernmentChallengeReviewResponse] = None
+
+
+# ============================================================================
+# Step 8C: Government University Project Monitoring Schemas
+# ============================================================================
+
+class GovernmentProjectSummary(BaseModel):
+    project_id: str
+    name: str
+    title: str
+    description: Optional[str] = None
+    university_id: str
+    university_name: Optional[str] = None
+    challenge_id: Optional[str] = None
+    challenge_title: Optional[str] = None
+    category: Optional[str] = None
+    project_status: str
+    lifecycle_stage: str
+    created_at: str
+    updated_at: str
+    start_date: Optional[str] = None
+    target_date: Optional[str] = None
+    team_id: Optional[str] = None
+    team_name: Optional[str] = None
+    team_size: int = 0
+    faculty_count: int = 0
+    student_count: int = 0
+    milestone_count: int = 0
+    completed_milestone_count: int = 0
+    prototype_count: int = 0
+    pilot_count: int = 0
+    deployment_readiness_state: Optional[str] = None
+    industry_partnership_count: int = 0
+    active_mentorship_count: int = 0
+    resource_contribution_count: int = 0
+    funding_proposal_count: int = 0
+
+
+class GovernmentProjectsPage(BaseModel):
+    items: List[GovernmentProjectSummary]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+    status_counts: dict = {}
+
+
+class GovernmentProjectDossier(BaseModel):
+    overview: dict
+    university: dict
+    linked_challenge: Optional[dict] = None
+    team: Optional[dict] = None
+    milestones: List[dict] = []
+    research: List[dict] = []
+    solution: Optional[dict] = None
+    prototypes: List[dict] = []
+    pilots: List[dict] = []
+    deployment_readiness: Optional[dict] = None
+    industry_collaboration: dict = {}
+    recent_activity: List[dict] = []
+
+
+# ============================================================================
+# Step 8D: Industry Collaboration Monitoring Schemas
+# ============================================================================
+
+class GovernmentCollaborationSummary(BaseModel):
+    partnership_id: str
+    project_id: str
+    project_name: Optional[str] = None
+    university_id: str
+    university_name: Optional[str] = None
+    industry_user_id: str
+    company_name: Optional[str] = None
+    industry_sector: Optional[str] = None
+    partnership_status: str
+    mentor_count: int = 0
+    active_mentorship_count: int = 0
+    resource_contribution_count: int = 0
+    accepted_resource_count: int = 0
+    funding_proposal_count: int = 0
+    approved_funding_count: int = 0
+    total_funding_amount: float = 0.0
+    created_at: str
+    updated_at: str
+
+
+class GovernmentCollaborationsPage(BaseModel):
+    items: List[GovernmentCollaborationSummary]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+    summary_counts: dict = {}
+
+
+class GovernmentCollaborationDetail(BaseModel):
+    partnership_id: str
+    status: str
+    message: Optional[str] = None
+    created_at: str
+    updated_at: str
+    industry_partner: dict
+    university: dict
+    project: dict
+    mentors: List[dict] = []
+    resources: List[dict] = []
+    funding_proposals: List[dict] = []
+    activity: List[dict] = []
+
+
+# ============================================================================
+# Step 8E: Pilot & Deployment Oversight Schemas
+# ============================================================================
+
+class GovernmentLifecycleMonitoringSummary(BaseModel):
+    total_projects: int
+    planning: int
+    research: int
+    solution_proposed: int
+    prototype: int
+    pilot: int
+    deployment_ready: int
+    deployed: int
+    completed: int
+
+
+class GovernmentPilotItem(BaseModel):
+    pilot_id: str
+    project_id: str
+    project_name: Optional[str] = None
+    university_id: str
+    university_name: Optional[str] = None
+    category: Optional[str] = None
+    title: str
+    location: str
+    objectives: str
+    status: str
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    observations: Optional[str] = None
+    results: Optional[str] = None
+    issues: Optional[str] = None
+    created_at: str
+
+
+class GovernmentPilotsPage(BaseModel):
+    items: List[GovernmentPilotItem]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+    status_counts: dict = {}
+
+
+class GovernmentDeploymentItem(BaseModel):
+    project_id: str
+    project_name: str
+    university_id: str
+    university_name: Optional[str] = None
+    category: Optional[str] = None
+    lifecycle_stage: str
+    project_status: str
+    readiness_status: str
+    technical_readiness: Optional[str] = None
+    infrastructure_requirements: Optional[str] = None
+    estimated_cost: Optional[str] = None
+    maintenance_requirements: Optional[str] = None
+    deployment_requirements: Optional[str] = None
+    blockers: Optional[str] = None
+    milestones_count: int = 0
+    completed_milestones_count: int = 0
+    updated_at: str
+
+
+class GovernmentDeploymentsPage(BaseModel):
+    items: List[GovernmentDeploymentItem]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+    status_counts: dict = {}
+
+
+# ============================================================================
+# Step 8F: Regional & Category Analytics Schemas
+# ============================================================================
+
+class GovernmentAnalyticsItem(BaseModel):
+    key: str
+    label: str
+    count: int
+    percentage: Optional[float] = None
+
+
+class GovernmentAnalyticsResponse(BaseModel):
+    challenges_by_category: List[GovernmentAnalyticsItem] = []
+    challenges_by_priority: List[GovernmentAnalyticsItem] = []
+    challenges_by_status: List[GovernmentAnalyticsItem] = []
+    challenges_by_ai_status: List[GovernmentAnalyticsItem] = []
+    challenges_by_government_review: List[GovernmentAnalyticsItem] = []
+    projects_by_category: List[GovernmentAnalyticsItem] = []
+    projects_by_status: List[GovernmentAnalyticsItem] = []
+    projects_by_lifecycle_stage: List[GovernmentAnalyticsItem] = []
+    projects_by_state: List[GovernmentAnalyticsItem] = []
+    projects_by_district: List[GovernmentAnalyticsItem] = []
+    partnerships_by_status: List[GovernmentAnalyticsItem] = []
+    pilots_by_status: List[GovernmentAnalyticsItem] = []
+    total_challenges: int = 0
+    total_projects: int = 0
+    total_partnerships: int = 0
+    total_pilots: int = 0
+
+
+# ============================================================================
+# Step 8G: Government Actions & Decisions Schemas
+# ============================================================================
+
+GovernmentActionType = Literal[
+    "review_followup",
+    "clarification_followup",
+    "monitoring_required",
+    "policy_attention",
+    "coordination_required",
+    "deployment_followup",
+    "pilot_followup",
+    "other",
+]
+GovernmentActionTargetType = Literal["challenge", "project", "partnership", "pilot", "deployment"]
+GovernmentActionStatus = Literal["open", "in_progress", "completed", "cancelled"]
+GovernmentActionPriority = Literal["low", "medium", "high", "critical"]
+
+
+class GovernmentActionCreate(BaseModel):
+    action_type: GovernmentActionType
+    target_type: GovernmentActionTargetType
+    target_id: str = Field(..., min_length=1, max_length=100)
+    title: str = Field(..., min_length=2, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=3000)
+    priority: GovernmentActionPriority = Field(default="medium")
+    due_date: Optional[str] = None
+
+
+class GovernmentActionUpdate(BaseModel):
+    action_type: Optional[GovernmentActionType] = None
+    title: Optional[str] = Field(default=None, min_length=2, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=3000)
+    status: Optional[GovernmentActionStatus] = None
+    priority: Optional[GovernmentActionPriority] = None
+    due_date: Optional[str] = None
+
+
+class GovernmentActionResponse(BaseModel):
+    id: str
+    government_user_id: str
+    action_type: str
+    target_type: str
+    target_id: str
+    target_title: Optional[str] = None
+    title: str
+    description: Optional[str] = None
+    status: str
+    priority: str
+    due_date: Optional[str] = None
+    created_at: str
+    updated_at: str
+    completed_at: Optional[str] = None
+
+
+class GovernmentActionsSummaryCounts(BaseModel):
+    total: int
+    open: int
+    in_progress: int
+    completed: int
+    cancelled: int
+    critical_priority: int
+
+
+class GovernmentActionsPage(BaseModel):
+    items: List[GovernmentActionResponse]
+    total: int
+    page: int
+    limit: int
+    total_pages: int
+    summary_counts: GovernmentActionsSummaryCounts
+
 
