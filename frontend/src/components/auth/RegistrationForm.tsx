@@ -24,6 +24,7 @@ const statesOfIndia = [
 ];
 
 const tamilNaduDistricts = [
+  "Jharkhand",
   "Virudhunagar",
   "Madurai",
   "Chennai",

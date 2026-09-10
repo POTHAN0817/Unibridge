@@ -631,7 +631,7 @@ export default function UniversityProfile() {
               className="inline-flex items-center gap-2 px-8 py-3 rounded-xl text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 transition-all shadow-sm cursor-pointer disabled:opacity-50"
             >
               <Save size={16} />
-              {saving ? "Saving Institutional Profile..." : "Save Verified Profile to MongoDB"}
+              {saving ? "Saving Institutional Profile..." : "Save Verified Details"}
             </button>
 
             <button
