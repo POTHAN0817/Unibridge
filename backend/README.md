@@ -3,19 +3,19 @@ title: UniBridge API
 emoji: 🌉
 colorFrom: blue
 colorTo: indigo
-sdk: docker
-app_port: 7860
+sdk: gradio
+sdk_version: 5.20.0
+app_file: app.py
 pinned: false
 ---
 
 # UniBridge Backend API
 
-FastAPI backend for UniBridge societal problem-solving platform.
+FastAPI backend for UniBridge platform running on Hugging Face Spaces (Gradio SDK).
 
 ## API Documentation
-Once running, interactive Swagger documentation is available at:
-- `/docs`
-- `/redoc`
+- Interactive Swagger UI: `/docs`
+- ReDoc: `/redoc`
 
 ## Health Check
 - `GET /health`
