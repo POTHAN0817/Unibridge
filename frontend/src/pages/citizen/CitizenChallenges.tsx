@@ -91,11 +91,10 @@ export default function CitizenChallenges() {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize whitespace-nowrap transition-all ${
-                  selectedCategory === cat
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize whitespace-nowrap transition-all ${selectedCategory === cat
                     ? "bg-blue-600 text-white shadow-xs"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                  }`}
               >
                 {cat}
               </button>

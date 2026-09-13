@@ -258,7 +258,7 @@ export default function UniversityProfile() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Coimbatore"
+                  placeholder="e.g. Ranchi, Jamshedpur, Dhanbad"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-purple-600 focus:outline-none"
@@ -271,7 +271,7 @@ export default function UniversityProfile() {
                 </label>
                 <input
                   type="text"
-                  placeholder="e.g. Tamil Nadu"
+                  placeholder="e.g. Jharkhand"
                   value={state}
                   onChange={(e) => setState(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-purple-600 focus:outline-none"

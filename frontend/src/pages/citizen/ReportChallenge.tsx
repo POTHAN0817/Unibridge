@@ -14,9 +14,21 @@ import {
   Image as ImageIcon,
   Trash2,
   X,
+  Navigation,
 } from "lucide-react";
 import { challengeService } from "../../services/challengeService";
 import { useAuth } from "../../auth/AuthContext";
+import {
+  JHARKHAND_STATE_NAME,
+  ALL_INDIAN_STATES,
+  getJharkhandDistricts,
+  getLocalitiesForDistrict,
+  findClosestJharkhandDistrict,
+  isWithinJharkhand,
+  reverseGeocodeCoordinates,
+  SAMPLE_GPS_PRESETS,
+  SampleLocationPreset,
+} from "../../data/jharkhandLocations";
 
 const categories = [
   "Agriculture",
@@ -37,13 +49,25 @@ export default function ReportChallenge() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Agriculture");
-  const [state, setState] = useState(user?.state || "");
-  const [district, setDistrict] = useState(user?.district || "");
+
+  // Location hierarchy state
+  const [state, setState] = useState(user?.state || JHARKHAND_STATE_NAME);
+  const [district, setDistrict] = useState(user?.district || "Ranchi");
+  const [locality, setLocality] = useState("");
+  const [customLocality, setCustomLocality] = useState("");
+  const [isCustomLocality, setIsCustomLocality] = useState(false);
   const [village, setVillage] = useState("");
+
+  // Geolocation state
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [accuracy, setAccuracy] = useState<number | null>(null);
+  const [geoStatus, setGeoStatus] = useState<"idle" | "requesting" | "granted" | "denied" | "error">("idle");
+  const [geoMessage, setGeoMessage] = useState<string | null>(null);
+
   const [urgency, setUrgency] = useState<"low" | "medium" | "high" | "">("");
   const [affectedPeople, setAffectedPeople] = useState("");
   const [tags, setTags] = useState("");
-
 
   // Photo attachment state
   const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
@@ -66,6 +90,137 @@ export default function ReportChallenge() {
       }
     };
   }, [photoPreview]);
+
+  const requestGeoLocation = (onComplete?: () => void) => {
+    if (typeof window === "undefined" || !("geolocation" in navigator)) {
+      setGeoStatus("error");
+      setGeoMessage("Geolocation is not supported by your browser. Please enter your location manually.");
+      if (onComplete) onComplete();
+      return;
+    }
+
+    if (window.isSecureContext === false && window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1") {
+      setGeoStatus("error");
+      setGeoMessage("Browser geolocation requires a secure connection (HTTPS or localhost). Please enter your location manually.");
+      if (onComplete) onComplete();
+      return;
+    }
+
+    setGeoStatus("requesting");
+    setGeoMessage("Acquiring GPS coordinates and resolving your exact physical location...");
+
+    const handleSuccess = async (pos: GeolocationPosition) => {
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const acc = pos.coords.accuracy ? Math.round(pos.coords.accuracy) : null;
+      setLatitude(lat);
+      setLongitude(lng);
+      setAccuracy(acc);
+      setGeoStatus("granted");
+
+      // Perform real reverse geocoding to identify exact State, District / City, and Locality
+      try {
+        const geo = await reverseGeocodeCoordinates(lat, lng);
+        if (geo.state) {
+          setState(geo.state);
+        }
+        if (geo.district || geo.city) {
+          setDistrict(geo.district || geo.city || "");
+        }
+        if (geo.locality) {
+          setLocality(geo.locality);
+          setIsCustomLocality(false);
+          setCustomLocality("");
+        }
+
+        const resolvedLocation = [geo.locality, geo.district || geo.city, geo.state].filter(Boolean).join(", ");
+        const accText = acc ? ` · ±${acc}m accuracy` : "";
+
+        if (resolvedLocation) {
+          setGeoMessage(
+            `Exact location detected: ${resolvedLocation} (${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E${accText}). Protected under Citizen Privacy Rules.`
+          );
+        } else {
+          // Fallback if reverse geocoding service returned no name
+          if (isWithinJharkhand(lat, lng)) {
+            const match = findClosestJharkhandDistrict(lat, lng);
+            setState(JHARKHAND_STATE_NAME);
+            setDistrict(match.district);
+            const districtLocalities = getLocalitiesForDistrict(match.district);
+            setLocality(districtLocalities[0] || "");
+            setGeoMessage(
+              `GPS location tagged: ${match.district}, Jharkhand (${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E${accText}).`
+            );
+          } else {
+            setGeoMessage(
+              `GPS coordinates tagged: ${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E${accText}. Please verify your State & District below.`
+            );
+          }
+        }
+      } catch (geoErr) {
+        console.warn("Reverse geocode failed, falling back:", geoErr);
+        if (isWithinJharkhand(lat, lng)) {
+          const match = findClosestJharkhandDistrict(lat, lng);
+          setState(JHARKHAND_STATE_NAME);
+          setDistrict(match.district);
+        }
+        setGeoMessage(`GPS coordinates tagged: ${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E.`);
+      }
+
+      if (onComplete) onComplete();
+    };
+
+    const handleError = (err: GeolocationPositionError) => {
+      console.warn("Geolocation permission error or denied:", err);
+      setGeoStatus("denied");
+      let msg = "Location access was denied. You can manually enter your State, District, and Locality below.";
+      if (err.code === err.PERMISSION_DENIED) {
+        msg = "Location permission was denied in your browser. You can manually select or type your State and District below.";
+      } else if (err.code === err.POSITION_UNAVAILABLE) {
+        msg = "GPS location service is unavailable on your device or network. Please enter your location manually.";
+      } else if (err.code === err.TIMEOUT) {
+        msg = "Location request timed out. Please enter your location manually.";
+      }
+      setGeoMessage(msg);
+      if (onComplete) onComplete();
+    };
+
+    // First try with high accuracy; if it times out on laptop/desktop, retry with standard Wi-Fi accuracy
+    navigator.geolocation.getCurrentPosition(
+      handleSuccess,
+      (err) => {
+        if (err.code === err.TIMEOUT || err.code === err.POSITION_UNAVAILABLE) {
+          navigator.geolocation.getCurrentPosition(
+            handleSuccess,
+            handleError,
+            { enableHighAccuracy: false, timeout: 8000, maximumAge: 120000 }
+          );
+        } else {
+          handleError(err);
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 9000,
+        maximumAge: 60000,
+      }
+    );
+  };
+
+  const applyPresetLocation = (preset: SampleLocationPreset) => {
+    setLatitude(preset.latitude);
+    setLongitude(preset.longitude);
+    setAccuracy(15);
+    setGeoStatus("granted");
+    setState(preset.state);
+    setDistrict(preset.district);
+    setLocality(preset.locality);
+    setIsCustomLocality(false);
+    setCustomLocality("");
+    setGeoMessage(
+      `GPS Simulated: ${preset.locality}, ${preset.district}, ${preset.state} (${preset.latitude.toFixed(4)}° N, ${preset.longitude.toFixed(4)}° E · ±15m accuracy).`
+    );
+  };
 
   const validateAndSetPhoto = (file: File): boolean => {
     setPhotoError(null);
@@ -92,6 +247,9 @@ export default function ReportChallenge() {
     }
     setSelectedPhoto(file);
     setPhotoPreview(URL.createObjectURL(file));
+
+    // Request browser geolocation permission when citizen uploads photo
+    requestGeoLocation();
     return true;
   };
 
@@ -148,17 +306,23 @@ export default function ReportChallenge() {
     try {
       setSubmitting(true);
       setSubmitError(null);
+      const finalAddress = isCustomLocality && customLocality ? customLocality : (locality || village || undefined);
       await challengeService.createChallenge({
         title,
         description,
         category: aiCategory || category,
         location: {
           district: district || undefined,
-          state: state || undefined,
-          address: village || undefined,
+          state: state || user?.state || JHARKHAND_STATE_NAME,
+          address: finalAddress,
+          latitude: latitude !== null ? latitude : undefined,
+          longitude: longitude !== null ? longitude : undefined,
         },
-        state,
-        district,
+        state: state || user?.state || JHARKHAND_STATE_NAME,
+        district: district || undefined,
+        address: finalAddress,
+        latitude: latitude !== null ? latitude : undefined,
+        longitude: longitude !== null ? longitude : undefined,
         priority: urgency === "high" ? "HIGH" : urgency === "low" ? "LOW" : "MEDIUM",
         urgency: urgency || undefined,
         affected_people: affectedPeople ? parseInt(affectedPeople.replace(/\D/g, ""), 10) || null : null,
@@ -200,23 +364,21 @@ export default function ReportChallenge() {
             {progressLabels.map((label, i) => (
               <div
                 key={i}
-                className={`p-3 rounded-2xl border text-left transition-all ${
-                  step === i + 1
+                className={`p-3 rounded-2xl border text-left transition-all ${step === i + 1
                     ? "bg-blue-50 border-blue-200 text-blue-800"
                     : step > i + 1
-                    ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                    : "bg-gray-50 border-gray-200 text-gray-400"
-                }`}
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                      : "bg-gray-50 border-gray-200 text-gray-400"
+                  }`}
               >
                 <div className="flex items-center gap-2">
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                      step > i + 1
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${step > i + 1
                         ? "bg-emerald-600 text-white"
                         : step === i + 1
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-200 text-gray-600"
-                    }`}
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-200 text-gray-600"
+                      }`}
                   >
                     {step > i + 1 ? "✓" : i + 1}
                   </div>
@@ -300,11 +462,10 @@ export default function ReportChallenge() {
                       key={cat}
                       type="button"
                       onClick={() => setCategory(cat)}
-                      className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-left ${
-                        category === cat
+                      className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all text-left ${category === cat
                           ? "bg-blue-50 text-blue-700 border-blue-400 shadow-xs"
                           : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
-                      }`}
+                        }`}
                     >
                       {cat}
                     </button>
@@ -339,51 +500,245 @@ export default function ReportChallenge() {
                   Where is this challenge located?
                 </h2>
                 <p className="text-gray-500 text-sm mt-1">
-                  Helps match with nearby universities and state nodal officers.
+                  Use GPS detection to pin your exact location automatically, or select your State and District below to match regional university innovators and nodal officers.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    value={state}
-                    onChange={(e) => setState(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
-                  />
+              {/* GPS Detection Bar */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-blue-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`p-2.5 rounded-xl ${
+                      latitude && longitude
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-blue-100 text-blue-700"
+                    }`}
+                  >
+                    <Navigation size={18} />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                      <span>{latitude && longitude ? "GPS Location Locked" : "Auto-Detect Exact Location (GPS)"}</span>
+                      {accuracy && (
+                        <span className="text-[10px] font-medium text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded">
+                          ±{Math.round(accuracy)}m
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-gray-500 mt-0.5">
+                      {latitude && longitude
+                        ? `${latitude.toFixed(4)}° N, ${longitude.toFixed(4)}° E · ${[locality, district, state].filter(Boolean).join(", ")} (Citizen Privacy Protected)`
+                        : "Detect your exact physical coordinates, state, and district automatically."}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                    District
-                  </label>
-                  <input
-                    type="text"
-                    value={district}
-                    onChange={(e) => setDistrict(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
-                  />
+                <div className="flex items-center gap-2 self-end sm:self-auto">
+                  {latitude && longitude && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLatitude(null);
+                        setLongitude(null);
+                        setAccuracy(null);
+                        setGeoStatus("idle");
+                        setGeoMessage(null);
+                      }}
+                      className="px-3 py-1.5 rounded-xl text-xs font-semibold text-gray-600 hover:bg-gray-200 bg-gray-100 transition-colors cursor-pointer"
+                    >
+                      Clear GPS
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => requestGeoLocation()}
+                    disabled={geoStatus === "requesting"}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 shadow-2xs transition-all whitespace-nowrap cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {geoStatus === "requesting" ? (
+                      <>
+                        <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                        <span>Detecting...</span>
+                      </>
+                    ) : latitude && longitude ? (
+                      "Re-detect GPS"
+                    ) : (
+                      "Detect GPS"
+                    )}
+                  </button>
                 </div>
               </div>
 
+              {/* GPS Status / Feedback Message */}
+              {geoMessage && (
+                <div
+                  className={`p-3 rounded-xl text-xs flex items-start gap-2 ${
+                    geoStatus === "granted"
+                      ? "bg-emerald-50 border border-emerald-200 text-emerald-800"
+                      : geoStatus === "denied" || geoStatus === "error"
+                      ? "bg-amber-50 border border-amber-200 text-amber-800"
+                      : "bg-blue-50 border border-blue-200 text-blue-800"
+                  }`}
+                >
+                  {geoStatus === "granted" ? (
+                    <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+                  ) : geoStatus === "denied" || geoStatus === "error" ? (
+                    <AlertTriangle size={16} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0 mt-0.5" />
+                  )}
+                  <div className="flex-1">{geoMessage}</div>
+                </div>
+              )}
+
+              {/* Quick simulation presets for multi-state testing */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] font-semibold text-gray-500 mr-1">GPS Test Presets:</span>
+                  {SAMPLE_GPS_PRESETS.map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => applyPresetLocation(preset)}
+                      className="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-white hover:bg-blue-50 hover:text-blue-700 text-gray-700 border border-gray-200 transition-colors cursor-pointer shadow-2xs"
+                      title={preset.description}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* State and District Selection */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                    State / Union Territory
+                  </label>
+                  <select
+                    value={state}
+                    onChange={(e) => {
+                      const newState = e.target.value;
+                      setState(newState);
+                      if (newState === JHARKHAND_STATE_NAME) {
+                        setDistrict("Ranchi");
+                        const locs = getLocalitiesForDistrict("Ranchi");
+                        setLocality(locs[0] || "");
+                      } else {
+                        setDistrict("");
+                        setLocality("");
+                      }
+                      setIsCustomLocality(false);
+                      setCustomLocality("");
+                    }}
+                    className="w-full px-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none transition-all cursor-pointer font-medium"
+                  >
+                    <option value="" disabled>Select State / UT</option>
+                    {ALL_INDIAN_STATES.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                    District ({state || "Select State"})
+                  </label>
+                  {state === JHARKHAND_STATE_NAME ? (
+                    <select
+                      value={district}
+                      onChange={(e) => {
+                        const newDist = e.target.value;
+                        setDistrict(newDist);
+                        const locs = getLocalitiesForDistrict(newDist);
+                        setLocality(locs[0] || "");
+                        setIsCustomLocality(false);
+                        setCustomLocality("");
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none transition-all cursor-pointer font-medium"
+                    >
+                      <option value="" disabled>Select District</option>
+                      {getJharkhandDistricts().map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={district}
+                      onChange={(e) => setDistrict(e.target.value)}
+                      placeholder="e.g. Hyderabad, Bengaluru Urban, Mumbai, etc."
+                      className="w-full px-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none transition-all font-medium"
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Locality / Sub-region Selection */}
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
-                  Village / Town / Panchayat / Specific Landmark
+                  Locality / Town / Ward / Landmark in {district || state || "Region"}
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
-                    <MapPin size={16} />
+                {state === JHARKHAND_STATE_NAME ? (
+                  <>
+                    <select
+                      value={isCustomLocality ? "__custom__" : locality}
+                      onChange={(e) => {
+                        if (e.target.value === "__custom__") {
+                          setIsCustomLocality(true);
+                        } else {
+                          setIsCustomLocality(false);
+                          setLocality(e.target.value);
+                        }
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none transition-all cursor-pointer font-medium mb-3"
+                    >
+                      <option value="">Select Locality or Sub-region</option>
+                      {getLocalitiesForDistrict(district).map((loc) => (
+                        <option key={loc} value={loc}>
+                          {loc}
+                        </option>
+                      ))}
+                      <option value="__custom__">+ Other / Specific Village or Landmark...</option>
+                    </select>
+
+                    {(isCustomLocality || !locality) && (
+                      <div>
+                        <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1.5">
+                          Specific Village / Panchayat / Ward / Landmark
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                            <MapPin size={16} />
+                          </div>
+                          <input
+                            type="text"
+                            value={customLocality}
+                            onChange={(e) => setCustomLocality(e.target.value)}
+                            placeholder="e.g. Kanke Road Agricultural Zone, Ormanjhi"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                      <MapPin size={16} />
+                    </div>
+                    <input
+                      type="text"
+                      value={locality}
+                      onChange={(e) => setLocality(e.target.value)}
+                      placeholder="e.g. Madhapur / Hitec City, Sector 4, MG Road"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
+                    />
                   </div>
-                  <input
-                    type="text"
-                    value={village}
-                    onChange={(e) => setVillage(e.target.value)}
-                    placeholder="e.g. Srivilliputhur Vegetable Market Belt"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none"
-                  />
-                </div>
+                )}
               </div>
 
               <div className="flex justify-between pt-4 border-t border-gray-100">
@@ -451,9 +806,8 @@ export default function ReportChallenge() {
                         key={item.id}
                         type="button"
                         onClick={() => setUrgency(item.id as any)}
-                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all text-center ${
-                          urgency === item.id ? item.color + " ring-2 ring-blue-500" : "bg-gray-50 text-gray-600 border-gray-200"
-                        }`}
+                        className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all text-center ${urgency === item.id ? item.color + " ring-2 ring-blue-500" : "bg-gray-50 text-gray-600 border-gray-200"
+                          }`}
                       >
                         {item.label}
                       </button>
@@ -566,6 +920,64 @@ export default function ReportChallenge() {
                     <span>{photoError}</span>
                   </div>
                 )}
+
+                {/* Geolocation feedback triggered upon photo upload */}
+                {geoStatus === "requesting" && (
+                  <div className="mt-3 p-4 rounded-2xl bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-start gap-3 animate-pulse">
+                    <Navigation size={18} className="text-blue-600 flex-shrink-0 mt-0.5 animate-spin" />
+                    <div>
+                      <div className="font-bold">Requesting Geolocation Access...</div>
+                      <div className="text-[11px] text-blue-700 mt-0.5">
+                        UniBridge is requesting your browser location permission to associate this challenge photo with your current physical location in Jharkhand.
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {geoStatus === "granted" && latitude && longitude && (
+                  <div className="mt-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-start gap-2.5">
+                      <CheckCircle2 size={18} className="text-emerald-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold">Location Permission Granted & GPS Tagged</div>
+                        <div className="text-[11px] text-emerald-700 mt-0.5">
+                          Coordinates: {latitude.toFixed(4)}° N, {longitude.toFixed(4)}° E · Associated with {[locality, district, state].filter(Boolean).join(", ")}.
+                        </div>
+                        <div className="text-[10px] text-emerald-600/90 mt-0.5">
+                          🔒 Precise coordinates are protected under Citizen Privacy Rules and never exposed to universities or industry.
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="px-3 py-1 rounded-lg text-xs font-bold bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-100 whitespace-nowrap shadow-2xs cursor-pointer"
+                    >
+                      Review Location
+                    </button>
+                  </div>
+                )}
+
+                {geoStatus === "denied" && (
+                  <div className="mt-3 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div className="flex items-start gap-2.5">
+                      <AlertTriangle size={18} className="text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold">Location Access Denied / Unavailable</div>
+                        <div className="text-[11px] text-amber-800 mt-0.5">
+                          {geoMessage || "Location permission was denied. Photo upload continues unaffected. You can manually select or type your State, District & Locality."}
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setStep(2)}
+                      className="px-3 py-1 rounded-lg text-xs font-bold bg-white border border-amber-300 text-amber-800 hover:bg-amber-100 whitespace-nowrap shadow-2xs cursor-pointer"
+                    >
+                      Select Manually
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-between pt-4 border-t border-gray-100">
@@ -629,8 +1041,18 @@ export default function ReportChallenge() {
                   <div>
                     <div className="text-[11px] font-bold text-gray-400 uppercase">Location</div>
                     <div className="text-xs font-bold text-gray-800 mt-0.5">
-                      {[village, district, state].filter(Boolean).join(", ") || "Not specified"}
+                      {[isCustomLocality && customLocality ? customLocality : locality || village, district, state].filter(Boolean).join(", ") || "Not specified"}
                     </div>
+                    {latitude && longitude ? (
+                      <div className="text-[10px] text-blue-600 font-semibold mt-1 flex items-center gap-1">
+                        <Navigation size={11} className="text-blue-500" />
+                        <span>GPS: {latitude.toFixed(4)}° N, {longitude.toFixed(4)}° E{accuracy ? ` (±${Math.round(accuracy)}m)` : ""} (Protected)</span>
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-gray-400 mt-0.5">
+                        Manual Selection ({state || "Specified"})
+                      </div>
+                    )}
                   </div>
                   <div>
                     <div className="text-[11px] font-bold text-gray-400 uppercase">Affected</div>

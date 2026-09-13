@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { MapPin, Upload, Users, AlertTriangle, Brain, CheckCircle2, ArrowRight, ArrowLeft, Sparkles } from "lucide-react";
 import type { Page } from "../types";
+import {
+  JHARKHAND_STATE_NAME,
+  ALL_INDIAN_STATES,
+  getJharkhandDistricts,
+  getLocalitiesForDistrict,
+} from "../data/jharkhandLocations";
 
 interface Props {
   onNavigate: (page: Page) => void;
@@ -9,13 +15,15 @@ interface Props {
 
 const aiCategories = ["Agriculture", "Water & Sanitation", "Healthcare", "Education", "Environment", "Infrastructure", "Energy", "Digital Connectivity"];
 const aiKeywords = ["Cold Chain", "IoT", "Agricultural Engineering", "Supply Chain", "Post-Harvest", "Rural Development"];
-const aiImpact = "Farmers and local agricultural supply chain in rural Tamil Nadu";
+const aiImpact = "Farmers and local agricultural supply chain in rural Jharkhand";
 
 export default function ReportChallenge({ onNavigate, onBack }: Props) {
   const [step, setStep] = useState(1);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [district, setDistrict] = useState("");
+  const [state, setState] = useState(JHARKHAND_STATE_NAME);
+  const [district, setDistrict] = useState("Ranchi");
+  const [locality, setLocality] = useState("");
   const [urgency, setUrgency] = useState("medium");
   const [affectedPeople, setAffectedPeople] = useState("");
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
@@ -148,22 +156,78 @@ export default function ReportChallenge({ onNavigate, onBack }: Props) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">State</label>
-                    <select className="w-full px-4 py-3 rounded-xl text-gray-700 outline-none" style={{ background: "#F6F9FC", border: "1px solid #E2E8F0" }}>
-                      <option>Tamil Nadu</option>
-                      <option>Karnataka</option>
-                      <option>Andhra Pradesh</option>
-                      <option>Maharashtra</option>
-                      <option>Rajasthan</option>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">State / UT</label>
+                    <select
+                      value={state}
+                      onChange={(e) => {
+                        const s = e.target.value;
+                        setState(s);
+                        if (s === JHARKHAND_STATE_NAME) {
+                          setDistrict("Ranchi");
+                        } else {
+                          setDistrict("");
+                        }
+                        setLocality("");
+                      }}
+                      className="w-full px-4 py-3 rounded-xl text-gray-700 outline-none bg-slate-50 cursor-pointer"
+                      style={{ border: "1px solid #E2E8F0" }}
+                    >
+                      {ALL_INDIAN_STATES.map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">District</label>
-                    <input value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="e.g. Virudhunagar" className="w-full px-4 py-3 rounded-xl text-gray-800 placeholder-gray-400 outline-none" style={{ background: "#F6F9FC", border: "1px solid #E2E8F0" }} />
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">District ({state})</label>
+                    {state === JHARKHAND_STATE_NAME ? (
+                      <select
+                        value={district}
+                        onChange={(e) => {
+                          setDistrict(e.target.value);
+                          setLocality("");
+                        }}
+                        className="w-full px-4 py-3 rounded-xl text-gray-800 outline-none"
+                        style={{ background: "#F6F9FC", border: "1px solid #E2E8F0" }}
+                      >
+                        {getJharkhandDistricts().map((d) => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={district}
+                        onChange={(e) => setDistrict(e.target.value)}
+                        placeholder="e.g. Hyderabad, Bengaluru Urban, Mumbai"
+                        className="w-full px-4 py-3 rounded-xl text-gray-800 outline-none"
+                        style={{ background: "#F6F9FC", border: "1px solid #E2E8F0" }}
+                      />
+                    )}
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Village / Area (optional)</label>
-                    <input defaultValue="Srivilliputhur" className="w-full px-4 py-3 rounded-xl text-gray-800 placeholder-gray-400 outline-none" style={{ background: "#F6F9FC", border: "1px solid #E2E8F0" }} />
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Locality / Area / Town</label>
+                    {state === JHARKHAND_STATE_NAME ? (
+                      <select
+                        value={locality}
+                        onChange={(e) => setLocality(e.target.value)}
+                        className="w-full px-4 py-3 rounded-xl text-gray-800 outline-none"
+                        style={{ background: "#F6F9FC", border: "1px solid #E2E8F0" }}
+                      >
+                        <option value="">Select Locality in {district}</option>
+                        {getLocalitiesForDistrict(district).map((loc) => (
+                          <option key={loc} value={loc}>{loc}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={locality}
+                        onChange={(e) => setLocality(e.target.value)}
+                        placeholder="e.g. Madhapur / Hitec City, Ward 4"
+                        className="w-full px-4 py-3 rounded-xl text-gray-800 outline-none"
+                        style={{ background: "#F6F9FC", border: "1px solid #E2E8F0" }}
+                      />
+                    )}
                   </div>
                 </div>
               </div>
@@ -234,7 +298,7 @@ export default function ReportChallenge({ onNavigate, onBack }: Props) {
                   </div>
                   <div className="rounded-xl p-5" style={{ background: "#F6F9FC", border: "1px solid #E2E8F0" }}>
                     <div className="text-xs font-semibold text-gray-400 mb-1">DESCRIPTION</div>
-                    <div className="text-gray-700 text-sm">{description || "Farmers in Tamil Nadu losing vegetables because of inadequate cold storage facilities near Srivilliputhur."}</div>
+                    <div className="text-gray-700 text-sm">{description || "Farmers losing vegetables because of inadequate cold storage facilities near Ormanjhi, Ranchi."}</div>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="rounded-xl p-4" style={{ background: "rgba(11,99,246,0.06)", border: "1px solid rgba(11,99,246,0.15)" }}>
@@ -333,7 +397,7 @@ export default function ReportChallenge({ onNavigate, onBack }: Props) {
                     <span className="text-xs font-bold text-red-500 tracking-widest">SIMILAR REPORTS</span>
                   </div>
                   <div className="text-3xl font-extrabold text-gray-800 mb-1" style={{ fontFamily: "var(--font-display)" }}>23</div>
-                  <div className="text-xs text-gray-500">similar challenges detected across Tamil Nadu</div>
+                  <div className="text-xs text-gray-500">similar challenges detected across Jharkhand</div>
                 </div>
               )}
 

@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   ArrowLeft,
-  Zap,
   ShieldCheck,
   Copy,
   Check,
@@ -156,12 +155,11 @@ export const RoleAuthLayout: React.FC<RoleAuthLayoutProps> = ({
         {/* Logo and Headings */}
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2 mb-4">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center shadow-md"
-              style={{ background: "linear-gradient(135deg, #0B63F6, #00C2FF)" }}
-            >
-              <Zap size={20} className="text-white" />
-            </div>
+            <img
+              src="/unbridgelogo.png"
+              alt="UniBridge"
+              className="w-10 h-10 object-contain"
+            />
             <span
               className="text-2xl font-extrabold text-[#071A33]"
               style={{ fontFamily: "var(--font-display)" }}

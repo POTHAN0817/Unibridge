@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link as RouterLink, NavLink as RouterNavLink, useNavigate as useRouterNavigate, useLocation as useRouterLocation } from "react-router-dom";
-import { Zap, Bell, User, ChevronDown, LogOut, ShieldCheck, Menu, X, ArrowLeft } from "lucide-react";
+import { Bell, User, ChevronDown, LogOut, ShieldCheck, Menu, X, ArrowLeft } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext";
 import { UserRole } from "../../types";
 
@@ -77,12 +77,11 @@ export const Navbar: React.FC = () => {
       >
         <div className="flex items-center gap-3">
           <RouterLink to="/" className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center shadow-xs"
-              style={{ background: "linear-gradient(135deg, #0B63F6, #00C2FF)" }}
-            >
-              <Zap size={16} className="text-white" />
-            </div>
+            <img
+              src="/unbridgelogo.png"
+              alt="UniBridge"
+              className="w-8 h-8 object-contain"
+            />
             <span
               className="font-extrabold text-lg text-[#071A33] tracking-tight"
               style={{ fontFamily: "var(--font-display)" }}
@@ -112,12 +111,11 @@ export const Navbar: React.FC = () => {
         {/* Brand & Role Tag */}
         <div className="flex items-center gap-3">
           <RouterLink to={`/${role}/dashboard`} className="flex items-center gap-2">
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center shadow-xs"
-              style={{ background: "linear-gradient(135deg, #0B63F6, #00C2FF)" }}
-            >
-              <Zap size={16} className="text-white" />
-            </div>
+            <img
+              src="/unbridgelogo.png"
+              alt="UniBridge"
+              className="w-8 h-8 object-contain"
+            />
             <div className="flex flex-col">
               <span
                 className="font-extrabold text-base text-[#071A33] leading-none"

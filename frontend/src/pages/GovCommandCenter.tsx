@@ -47,18 +47,18 @@ const impactData = [
 ];
 
 const pendingChallenges = [
-  { id: "CF-2026-089", title: "Cold Storage Infrastructure for Farmers", district: "Virudhunagar, TN", priority: 89, category: "Agriculture", reports: 23, ai: "APPROVE" },
-  { id: "CF-2026-091", title: "Drinking Water Contamination in Villages", district: "Kovilpatti, TN", priority: 92, category: "Water", reports: 31, ai: "APPROVE" },
-  { id: "CF-2026-094", title: "Emergency Healthcare Access in Remote Areas", district: "Theni, TN", priority: 85, category: "Healthcare", reports: 18, ai: "REVIEW" },
-  { id: "CF-2026-097", title: "Waste Management Near Residential Zones", district: "Madurai, TN", priority: 68, category: "Environment", reports: 7, ai: "REVIEW" },
+  { id: "CF-2026-089", title: "Cold Storage Infrastructure for Farmers", district: "Ranchi, Jharkhand", priority: 89, category: "Agriculture", reports: 23, ai: "APPROVE" },
+  { id: "CF-2026-091", title: "Drinking Water Contamination in Villages", district: "Dhanbad, Jharkhand", priority: 92, category: "Water", reports: 31, ai: "APPROVE" },
+  { id: "CF-2026-094", title: "Emergency Healthcare Access in Remote Areas", district: "Hazaribagh, Jharkhand", priority: 85, category: "Healthcare", reports: 18, ai: "REVIEW" },
+  { id: "CF-2026-097", title: "Waste Management Near Industrial Zones", district: "Bokaro, Jharkhand", priority: 68, category: "Environment", reports: 7, ai: "REVIEW" },
 ];
 
 const districts = [
-  { name: "Virudhunagar", challenges: 48, priority: "HIGH", lat: "9.6°N", lon: "77.9°E" },
-  { name: "Madurai", challenges: 63, priority: "HIGH", lat: "9.9°N", lon: "78.1°E" },
-  { name: "Kovilpatti", challenges: 35, priority: "HIGH", lat: "9.2°N", lon: "77.9°E" },
-  { name: "Dindigul", challenges: 29, priority: "MEDIUM", lat: "10.4°N", lon: "77.9°E" },
-  { name: "Tirunelveli", challenges: 41, priority: "HIGH", lat: "8.7°N", lon: "77.7°E" },
+  { name: "Ranchi", challenges: 63, priority: "HIGH", lat: "23.3°N", lon: "85.3°E" },
+  { name: "Dhanbad", challenges: 48, priority: "HIGH", lat: "23.8°N", lon: "86.4°E" },
+  { name: "Jamshedpur", challenges: 41, priority: "HIGH", lat: "22.8°N", lon: "86.2°E" },
+  { name: "Bokaro", challenges: 35, priority: "HIGH", lat: "23.7°N", lon: "86.2°E" },
+  { name: "Hazaribagh", challenges: 29, priority: "MEDIUM", lat: "24.0°N", lon: "85.4°E" },
 ];
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -260,13 +260,12 @@ export default function GovCommandCenter({ onNavigate, onBack }: Props) {
               <div className="absolute top-4 left-4 text-xs font-bold text-gray-400 tracking-widest">INDIA · NATIONAL CHALLENGE MAP</div>
               {/* Simulated district markers */}
               {[
-                { x: "45%", y: "72%", size: 18, color: "#EF4444", label: "Madurai" },
-                { x: "43%", y: "76%", size: 14, color: "#EF4444", label: "Virudhunagar" },
-                { x: "41%", y: "82%", size: 12, color: "#F59E0B", label: "Tirunelveli" },
-                { x: "44%", y: "69%", size: 10, color: "#F59E0B", label: "Dindigul" },
-                { x: "42%", y: "79%", size: 11, color: "#EF4444", label: "Kovilpatti" },
-                { x: "38%", y: "55%", size: 8, color: "#0B63F6", label: "Coimbatore" },
-                { x: "55%", y: "40%", size: 9, color: "#10B981", label: "Chennai" },
+                { x: "52%", y: "46%", size: 18, color: "#EF4444", label: "Ranchi (Capital)" },
+                { x: "62%", y: "44%", size: 15, color: "#EF4444", label: "Dhanbad" },
+                { x: "60%", y: "52%", size: 14, color: "#EF4444", label: "Jamshedpur" },
+                { x: "58%", y: "45%", size: 12, color: "#F59E0B", label: "Bokaro" },
+                { x: "64%", y: "38%", size: 11, color: "#10B981", label: "Deoghar" },
+                { x: "50%", y: "40%", size: 10, color: "#0B63F6", label: "Hazaribagh" },
               ].map((m, i) => (
                 <div key={i} className="absolute flex flex-col items-center gap-1" style={{ left: m.x, top: m.y, transform: "translate(-50%,-50%)" }}>
                   <div className="rounded-full pulse-glow" style={{ width: m.size, height: m.size, background: m.color, boxShadow: `0 0 ${m.size}px ${m.color}60` }}></div>

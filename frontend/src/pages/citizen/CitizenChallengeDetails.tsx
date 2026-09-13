@@ -145,8 +145,8 @@ export default function CitizenChallengeDetails() {
                         challenge.priorityScore >= 70
                           ? "#EF4444"
                           : challenge.priorityScore >= 40
-                          ? "#F59E0B"
-                          : "#10B981",
+                            ? "#F59E0B"
+                            : "#10B981",
                     }}
                   >
                     {challenge.priorityScore}
