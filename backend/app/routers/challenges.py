@@ -361,6 +361,11 @@ def get_challenge_by_id_endpoint(
         # Ensure citizen does not see university matching results
         if isinstance(challenge, dict) and "university_matches" in challenge:
             challenge["university_matches"] = None
+    elif user_role in [UserRole.UNIVERSITY.value, UserRole.INDUSTRY.value]:
+        # Protect citizen privacy: do not expose precise GPS coordinates to University or Industry roles
+        if isinstance(challenge, dict) and isinstance(challenge.get("location"), dict):
+            challenge["location"]["latitude"] = None
+            challenge["location"]["longitude"] = None
 
     return challenge
 

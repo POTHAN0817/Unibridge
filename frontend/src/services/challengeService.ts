@@ -69,10 +69,10 @@ export function mapBackendChallengeToFrontend(b: BackendChallenge): Challenge {
 
   const createdDate = b.created_at
     ? new Date(b.created_at).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      })
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
     : "Recently";
 
   // Derive priority level from priority_analysis level or priority_score
@@ -141,39 +141,39 @@ export function mapBackendChallengeToFrontend(b: BackendChallenge): Challenge {
       },
       ...(b.ai_analysis
         ? [
-            {
-              event: `AI Problem Analysis completed (${b.category || "General"})`,
-              time: createdDate,
-              type: "ai" as const,
-            },
-          ]
+          {
+            event: `AI Problem Analysis completed (${b.category || "General"})`,
+            time: createdDate,
+            type: "ai" as const,
+          },
+        ]
         : []),
       ...(b.priority_analysis
         ? [
-            {
-              event: `Priority computed: ${b.priority_analysis.score}/100 (${b.priority_analysis.level.toUpperCase()})`,
-              time: createdDate,
-              type: "info" as const,
-            },
-          ]
+          {
+            event: `Priority computed: ${b.priority_analysis.score}/100 (${b.priority_analysis.level.toUpperCase()})`,
+            time: createdDate,
+            type: "info" as const,
+          },
+        ]
         : []),
       ...(b.duplicate_analysis?.is_duplicate
         ? [
-            {
-              event: `Identified ${b.duplicate_analysis.duplicate_count} semantically similar community report(s)`,
-              time: createdDate,
-              type: "warning" as const,
-            },
-          ]
+          {
+            event: `Identified ${b.duplicate_analysis.duplicate_count} semantically similar community report(s)`,
+            time: createdDate,
+            type: "warning" as const,
+          },
+        ]
         : []),
       ...(topMatch
         ? [
-            {
-              event: `Matched with ${topMatch.university_name} (${topMatch.score}/100 - ${topMatch.level})`,
-              time: createdDate,
-              type: "info" as const,
-            },
-          ]
+          {
+            event: `Matched with ${topMatch.university_name} (${topMatch.score}/100 - ${topMatch.level})`,
+            time: createdDate,
+            type: "info" as const,
+          },
+        ]
         : []),
     ],
   };

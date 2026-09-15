@@ -396,11 +396,10 @@ export default function GovernmentChallengeDetails() {
                 </div>
 
                 <span
-                  className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
-                    duplicate.status === "unique"
+                  className={`text-xs font-bold px-2.5 py-1 rounded-full border ${duplicate.status === "unique"
                       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                       : "bg-amber-50 text-amber-700 border-amber-200"
-                  }`}
+                    }`}
                 >
                   {duplicate.status === "unique" ? "Unique Challenge" : "Potential Duplicate"}
                 </span>
@@ -790,13 +789,12 @@ export default function GovernmentChallengeDetails() {
                 <button
                   onClick={handleSubmitReview}
                   disabled={submittingReview}
-                  className={`inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50 ${
-                    activeModal === "validate"
+                  className={`inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl text-white shadow-xs transition-colors cursor-pointer disabled:opacity-50 ${activeModal === "validate"
                       ? "bg-emerald-600 hover:bg-emerald-700"
                       : activeModal === "reject"
-                      ? "bg-rose-600 hover:bg-rose-700"
-                      : "bg-amber-600 hover:bg-amber-700"
-                  }`}
+                        ? "bg-rose-600 hover:bg-rose-700"
+                        : "bg-amber-600 hover:bg-amber-700"
+                    }`}
                 >
                   {submittingReview ? (
                     <>

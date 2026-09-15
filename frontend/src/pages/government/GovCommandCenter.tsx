@@ -304,14 +304,15 @@ export default function GovCommandCenter() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white border border-gray-200 rounded-3xl p-6 sm:p-8 shadow-xs">
               <h3 className="text-base font-bold text-[#071A33] mb-2">District Heatmap Summary</h3>
-              <p className="text-xs text-gray-500 mb-6">Top challenge concentrations across Tamil Nadu</p>
+              <p className="text-xs text-gray-500 mb-6">Top challenge concentrations across Jharkhand</p>
               <div className="space-y-3 text-xs">
                 {[
-                  { name: "Virudhunagar", challenges: 48, priority: "HIGH" },
-                  { name: "Madurai", challenges: 63, priority: "HIGH" },
-                  { name: "Kovilpatti", challenges: 35, priority: "HIGH" },
-                  { name: "Dindigul", challenges: 29, priority: "MEDIUM" },
-                  { name: "Tirunelveli", challenges: 41, priority: "HIGH" },
+                  { name: "Ranchi", challenges: 63, priority: "HIGH" },
+                  { name: "Dhanbad", challenges: 48, priority: "HIGH" },
+                  { name: "East Singhbhum (Jamshedpur)", challenges: 41, priority: "HIGH" },
+                  { name: "Bokaro", challenges: 35, priority: "HIGH" },
+                  { name: "Hazaribagh", challenges: 29, priority: "MEDIUM" },
+                  { name: "Deoghar", challenges: 24, priority: "MEDIUM" },
                 ].map((d, i) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
                     <strong className="text-gray-800">{d.name}</strong>

@@ -1420,6 +1420,8 @@ export interface GovernmentChallengeDetail {
   priority_analysis?: Record<string, any> | null;
   project_relationship?: GovernmentProjectRelationship | null;
   government_review?: GovernmentChallengeReview | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 // ============================================================================

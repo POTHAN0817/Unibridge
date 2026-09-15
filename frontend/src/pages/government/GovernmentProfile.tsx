@@ -312,7 +312,7 @@ export default function GovernmentProfile() {
                     type="text"
                     value={state}
                     onChange={(e) => setState(e.target.value)}
-                    placeholder="e.g., Tamil Nadu"
+                    placeholder="e.g., Jharkhand"
                     className="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-50 border border-gray-200 focus:bg-white focus:border-emerald-600 focus:outline-none"
                   />
                 </div>
@@ -325,7 +325,7 @@ export default function GovernmentProfile() {
                     type="text"
                     value={district}
                     onChange={(e) => setDistrict(e.target.value)}
-                    placeholder="e.g., Madurai"
+                    placeholder="e.g., Ranchi"
                     className="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-50 border border-gray-200 focus:bg-white focus:border-emerald-600 focus:outline-none"
                   />
                 </div>
@@ -338,7 +338,7 @@ export default function GovernmentProfile() {
                     type="text"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    placeholder="e.g., Madurai"
+                    placeholder="e.g., Ranchi, Jamshedpur, Dhanbad"
                     className="w-full px-4 py-2.5 rounded-xl text-xs bg-slate-50 border border-gray-200 focus:bg-white focus:border-emerald-600 focus:outline-none"
                   />
                 </div>

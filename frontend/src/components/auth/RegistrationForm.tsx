@@ -4,37 +4,22 @@ import { UserRole } from "../../types";
 import { useAuth } from "../../auth/AuthContext";
 import { ArrowRight, AlertCircle, CheckCircle2 } from "lucide-react";
 
+import {
+  JHARKHAND_STATE_NAME,
+  ALL_INDIAN_STATES,
+  getJharkhandCities,
+  getJharkhandDistricts,
+} from "../../data/jharkhandLocations";
+
 interface RegistrationFormProps {
   role: UserRole;
   loginPath: string;
   submitButtonColor?: string;
 }
 
-const statesOfIndia = [
-  "Tamil Nadu",
-  "Karnataka",
-  "Maharashtra",
-  "Delhi",
-  "Telangana",
-  "Kerala",
-  "Andhra Pradesh",
-  "Gujarat",
-  "Uttar Pradesh",
-  "Other",
-];
-
-const tamilNaduDistricts = [
-  "Jharkhand",
-  "Virudhunagar",
-  "Madurai",
-  "Chennai",
-  "Tiruchirappalli",
-  "Coimbatore",
-  "Dindigul",
-  "Tenkasi",
-  "Tirunelveli",
-  "Salem",
-  "Other District",
+const priorityStates = [
+  JHARKHAND_STATE_NAME,
+  ...ALL_INDIAN_STATES.filter((s) => s !== JHARKHAND_STATE_NAME),
 ];
 
 export const RegistrationForm: React.FC<RegistrationFormProps> = ({
@@ -49,8 +34,10 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [state, setState] = useState("Tamil Nadu");
-  const [district, setDistrict] = useState("Virudhunagar");
+  const [state, setState] = useState(JHARKHAND_STATE_NAME);
+  const [district, setDistrict] = useState("Ranchi");
+  const [customCity, setCustomCity] = useState("");
+  const [isCustomCity, setIsCustomCity] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -84,8 +71,8 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       return;
     }
 
-    if (password.length < 6) {
-      setErrorMessage("Password must be at least 6 characters long.");
+    if (password.length < 8) {
+      setErrorMessage("Password must be at least 8 characters long.");
       return;
     }
 
@@ -93,6 +80,9 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
       setErrorMessage("Please accept the terms of service and civic participation charter.");
       return;
     }
+
+    const finalDistrictOrCity =
+      (isCustomCity && customCity ? customCity.trim() : district.trim()) || "Ranchi";
 
     const expertiseArray = expertiseString
       ? expertiseString.split(",").map((s) => s.trim()).filter(Boolean)
@@ -113,7 +103,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           password,
           confirm_password: confirmPassword,
           state,
-          district,
+          district: finalDistrictOrCity,
           terms_accepted: termsAccepted,
         };
         break;
@@ -127,7 +117,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           password,
           confirm_password: confirmPassword,
           state,
-          district,
+          district: finalDistrictOrCity,
           expertise: expertiseArray,
         };
         break;
@@ -141,7 +131,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           password,
           confirm_password: confirmPassword,
           industry_sector: sector.trim(),
-          location: `${district}, ${state}`,
+          location: `${finalDistrictOrCity}, ${state}`,
           expertise: expertiseArray,
           support_capabilities: capabilitiesArray,
         };
@@ -156,7 +146,7 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
           password,
           confirm_password: confirmPassword,
           state,
-          district,
+          district: finalDistrictOrCity,
           department_type: deptType,
         };
         break;
@@ -504,43 +494,102 @@ export const RegistrationForm: React.FC<RegistrationFormProps> = ({
         </div>
       </div>
 
-      {/* State & District */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* State & City / District Selection */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-            State
+            State / Union Territory
           </label>
           <select
             disabled={isBusy}
             value={state}
-            onChange={(e) => setState(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none disabled:opacity-60"
+            onChange={(e) => {
+              const newState = e.target.value;
+              setState(newState);
+              if (newState === JHARKHAND_STATE_NAME) {
+                setDistrict("Ranchi");
+                setIsCustomCity(false);
+                setCustomCity("");
+              } else {
+                setDistrict("");
+                setIsCustomCity(true);
+                setCustomCity("");
+              }
+            }}
+            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none disabled:opacity-60 font-medium cursor-pointer"
           >
-            {statesOfIndia.map((s) => (
+            {priorityStates.map((s) => (
               <option key={s} value={s}>
-                {s}
+                {s === JHARKHAND_STATE_NAME ? `${s} (Jharkhand State)` : s}
               </option>
             ))}
           </select>
         </div>
+
         <div>
           <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
-            District
+            City / District ({state})
           </label>
-          <select
-            disabled={isBusy}
-            value={district}
-            onChange={(e) => setDistrict(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none disabled:opacity-60"
-          >
-            {tamilNaduDistricts.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
+          {state === JHARKHAND_STATE_NAME ? (
+            <select
+              disabled={isBusy}
+              value={isCustomCity ? "__custom__" : district}
+              onChange={(e) => {
+                if (e.target.value === "__custom__") {
+                  setIsCustomCity(true);
+                } else {
+                  setIsCustomCity(false);
+                  setDistrict(e.target.value);
+                }
+              }}
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none disabled:opacity-60 font-medium cursor-pointer"
+            >
+              <optgroup label="Major Jharkhand Cities & Hubs">
+                {getJharkhandCities().map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label="All 24 Jharkhand Administrative Districts">
+                {getJharkhandDistricts().map((d) => (
+                  <option key={d} value={d}>
+                    {d} District
+                  </option>
+                ))}
+              </optgroup>
+              <option value="__custom__">+ Other City / Town in Jharkhand...</option>
+            </select>
+          ) : (
+            <input
+              type="text"
+              required
+              disabled={isBusy}
+              value={customCity}
+              onChange={(e) => setCustomCity(e.target.value)}
+              placeholder="e.g. Hyderabad, Bengaluru, Mumbai, Chennai"
+              className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none disabled:opacity-60 font-medium"
+            />
+          )}
         </div>
       </div>
+
+      {state === JHARKHAND_STATE_NAME && isCustomCity && (
+        <div className="animate-in fade-in duration-150">
+          <label className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">
+            Enter Specific Jharkhand City / Town / Block
+          </label>
+          <input
+            type="text"
+            required
+            disabled={isBusy}
+            value={customCity}
+            onChange={(e) => setCustomCity(e.target.value)}
+            placeholder="e.g. Patratu, Jharia, Ghatshila, Bermo, Katras"
+            className="w-full px-3.5 py-2.5 rounded-xl text-sm bg-slate-50 border border-gray-200 focus:bg-white focus:border-blue-600 focus:outline-none disabled:opacity-60 font-medium"
+          />
+        </div>
+      )}
 
       {/* Terms acceptance */}
       <div className="pt-2">

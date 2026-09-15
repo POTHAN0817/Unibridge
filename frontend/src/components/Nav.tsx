@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Menu, X, Zap, Bell, User, ChevronDown, ArrowLeft } from "lucide-react";
+import { Menu, X, Bell, User, ChevronDown, ArrowLeft } from "lucide-react";
 import type { Page, Role } from "../types";
 import { useAuth } from "../auth/AuthContext";
 
@@ -56,10 +56,14 @@ export default function Nav({ currentPage, role, onNavigate, onBack, canGoBack }
             </button>
           )}
           <button onClick={() => onNavigate("landing")} className="flex items-center gap-2 cursor-pointer">
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0B63F6, #00C2FF)" }}>
-              <Zap size={16} className="text-white" />
+            <div className="w-8 h-8 flex items-center justify-center">
+              <img
+                src="/unbridgelogo.png"
+                alt="UniBridge"
+                className="w-full h-full object-contain"
+              />
             </div>
-            <span className="font-bold text-navy text-lg" style={{ color: "#071A33", fontFamily: "var(--font-display)" }}>CivicForge</span>
+            <span className="font-bold text-navy text-lg" style={{ color: "#071A33", fontFamily: "var(--font-display)" }}>UniBridge</span>
           </button>
         </div>
 
@@ -86,10 +90,12 @@ export default function Nav({ currentPage, role, onNavigate, onBack, canGoBack }
           </button>
         )}
         <button onClick={() => onNavigate("landing")} className="flex items-center gap-2 cursor-pointer">
-          <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0B63F6, #00C2FF)" }}>
-            <Zap size={14} className="text-white" />
-          </div>
-          <span className="font-bold text-navy text-base" style={{ color: "#071A33", fontFamily: "var(--font-display)" }}>CivicForge</span>
+          <img
+            src="/unbridgelogo.png"
+            alt="UniBridge"
+            className="w-7 h-7 object-contain"
+          />
+          <span className="font-bold text-navy text-base" style={{ color: "#071A33", fontFamily: "var(--font-display)" }}>UniBridge</span>
         </button>
       </div>
 
