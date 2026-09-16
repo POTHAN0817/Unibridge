@@ -3,6 +3,7 @@ import { Link as RouterLink, NavLink as RouterNavLink, useNavigate as useRouterN
 import { Bell, User, ChevronDown, LogOut, ShieldCheck, Menu, X, ArrowLeft } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext";
 import { UserRole } from "../../types";
+import unibridgeLogo from "../../assets/unbridgelogo.png";
 
 export interface NavItemConfig {
   label: string;
@@ -78,9 +79,16 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center gap-3">
           <RouterLink to="/" className="flex items-center gap-2">
             <img
-              src={`${import.meta.env.BASE_URL}unbridgelogo.png`}
+              src={unibridgeLogo}
               alt="UniBridge"
               className="w-8 h-8 object-contain"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.dataset.triedFallback) {
+                  target.dataset.triedFallback = "1";
+                  target.src = "/unbridgelogo.png";
+                }
+              }}
             />
             <span
               className="font-extrabold text-lg text-[#071A33] tracking-tight"
@@ -112,9 +120,16 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center gap-3">
           <RouterLink to={`/${role}/dashboard`} className="flex items-center gap-2">
             <img
-              src={`${import.meta.env.BASE_URL}unbridgelogo.png`}
+              src={unibridgeLogo}
               alt="UniBridge"
               className="w-8 h-8 object-contain"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.dataset.triedFallback) {
+                  target.dataset.triedFallback = "1";
+                  target.src = "/unbridgelogo.png";
+                }
+              }}
             />
             <div className="flex flex-col">
               <span
