@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Menu, X, Bell, User, ChevronDown, ArrowLeft } from "lucide-react";
 import type { Page, Role } from "../types";
 import { useAuth } from "../auth/AuthContext";
-import unibridgeLogo from "../assets/unbridgelogo.png";
 
 interface NavProps {
   currentPage: Page;
@@ -57,18 +56,11 @@ export default function Nav({ currentPage, role, onNavigate, onBack, canGoBack }
             </button>
           )}
           <button onClick={() => onNavigate("landing")} className="flex items-center gap-2 cursor-pointer">
-            <div className="w-8 h-8 flex items-center justify-center">
+            <div className="w-9 h-9 flex items-center justify-center shrink-0">
               <img
-                src={unibridgeLogo}
+                src="/logo.png"
                 alt="UniBridge"
                 className="w-full h-full object-contain"
-                onError={(e) => {
-                  const target = e.currentTarget;
-                  if (!target.dataset.triedFallback) {
-                    target.dataset.triedFallback = "1";
-                    target.src = "/unbridgelogo.png";
-                  }
-                }}
               />
             </div>
             <span className="font-bold text-navy text-lg" style={{ color: "#071A33", fontFamily: "var(--font-display)" }}>UniBridge</span>
@@ -99,16 +91,9 @@ export default function Nav({ currentPage, role, onNavigate, onBack, canGoBack }
         )}
         <button onClick={() => onNavigate("landing")} className="flex items-center gap-2 cursor-pointer">
           <img
-            src={unibridgeLogo}
+            src="/logo.png"
             alt="UniBridge"
-            className="w-7 h-7 object-contain"
-            onError={(e) => {
-              const target = e.currentTarget;
-              if (!target.dataset.triedFallback) {
-                target.dataset.triedFallback = "1";
-                target.src = "/unbridgelogo.png";
-              }
-            }}
+            className="w-8 h-8 object-contain shrink-0"
           />
           <span className="font-bold text-navy text-base" style={{ color: "#071A33", fontFamily: "var(--font-display)" }}>UniBridge</span>
         </button>

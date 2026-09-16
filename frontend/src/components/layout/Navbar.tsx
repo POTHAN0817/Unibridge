@@ -3,7 +3,6 @@ import { Link as RouterLink, NavLink as RouterNavLink, useNavigate as useRouterN
 import { Bell, User, ChevronDown, LogOut, ShieldCheck, Menu, X, ArrowLeft } from "lucide-react";
 import { useAuth } from "../../auth/AuthContext";
 import { UserRole } from "../../types";
-import unibridgeLogo from "../../assets/unbridgelogo.png";
 
 export interface NavItemConfig {
   label: string;
@@ -77,18 +76,11 @@ export const Navbar: React.FC = () => {
         className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-white/95 backdrop-blur-md border-b border-gray-100"
       >
         <div className="flex items-center gap-3">
-          <RouterLink to="/" className="flex items-center gap-2">
+          <RouterLink to="/" className="flex items-center gap-2.5">
             <img
-              src={unibridgeLogo}
+              src="/logo.png"
               alt="UniBridge"
-              className="w-8 h-8 object-contain"
-              onError={(e) => {
-                const target = e.currentTarget;
-                if (!target.dataset.triedFallback) {
-                  target.dataset.triedFallback = "1";
-                  target.src = "/unbridgelogo.png";
-                }
-              }}
+              className="w-9 h-9 object-contain shrink-0"
             />
             <span
               className="font-extrabold text-lg text-[#071A33] tracking-tight"
@@ -118,18 +110,11 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
         {/* Brand & Role Tag */}
         <div className="flex items-center gap-3">
-          <RouterLink to={`/${role}/dashboard`} className="flex items-center gap-2">
+          <RouterLink to={`/${role}/dashboard`} className="flex items-center gap-2.5">
             <img
-              src={unibridgeLogo}
+              src="/logo.png"
               alt="UniBridge"
-              className="w-8 h-8 object-contain"
-              onError={(e) => {
-                const target = e.currentTarget;
-                if (!target.dataset.triedFallback) {
-                  target.dataset.triedFallback = "1";
-                  target.src = "/unbridgelogo.png";
-                }
-              }}
+              className="w-9 h-9 object-contain shrink-0"
             />
             <div className="flex flex-col">
               <span
