@@ -78,7 +78,7 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center gap-3">
           <RouterLink to="/" className="flex items-center gap-2">
             <img
-              src="/unbridgelogo.png"
+              src={`${import.meta.env.BASE_URL}unbridgelogo.png`}
               alt="UniBridge"
               className="w-8 h-8 object-contain"
             />
@@ -112,7 +112,7 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center gap-3">
           <RouterLink to={`/${role}/dashboard`} className="flex items-center gap-2">
             <img
-              src="/unbridgelogo.png"
+              src={`${import.meta.env.BASE_URL}unbridgelogo.png`}
               alt="UniBridge"
               className="w-8 h-8 object-contain"
             />

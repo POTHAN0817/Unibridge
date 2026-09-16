@@ -58,7 +58,7 @@ export default function Nav({ currentPage, role, onNavigate, onBack, canGoBack }
           <button onClick={() => onNavigate("landing")} className="flex items-center gap-2 cursor-pointer">
             <div className="w-8 h-8 flex items-center justify-center">
               <img
-                src="/unbridgelogo.png"
+                src={`${import.meta.env.BASE_URL}unbridgelogo.png`}
                 alt="UniBridge"
                 className="w-full h-full object-contain"
               />
@@ -91,7 +91,7 @@ export default function Nav({ currentPage, role, onNavigate, onBack, canGoBack }
         )}
         <button onClick={() => onNavigate("landing")} className="flex items-center gap-2 cursor-pointer">
           <img
-            src="/unbridgelogo.png"
+            src={`${import.meta.env.BASE_URL}unbridgelogo.png`}
             alt="UniBridge"
             className="w-7 h-7 object-contain"
           />
