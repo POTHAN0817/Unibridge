@@ -12,7 +12,6 @@ import {
   Sparkles,
   Layers,
   Image as ImageIcon,
-  Camera,
   Trash2,
   X,
   Navigation,
@@ -75,7 +74,6 @@ export default function ReportChallenge() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-  const fileInputStep1Ref = React.useRef<HTMLInputElement | null>(null);
 
   // Simulated AI analysis while typing
   const [aiAnalyzing, setAiAnalyzing] = useState(false);
@@ -270,9 +268,6 @@ export default function ReportChallenge() {
     setPhotoError(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
-    }
-    if (fileInputStep1Ref.current) {
-      fileInputStep1Ref.current.value = "";
     }
   };
 
@@ -476,105 +471,6 @@ export default function ReportChallenge() {
                     </button>
                   ))}
                 </div>
-              </div>
-
-              {/* Photo of the Challenge */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider">
-                    Photo of the Challenge (Optional)
-                  </label>
-                  <span className="text-[11px] text-gray-400">
-                    Visual evidence helps university researchers & nodal officers
-                  </span>
-                </div>
-
-                <input
-                  type="file"
-                  ref={fileInputStep1Ref}
-                  onChange={handlePhotoChange}
-                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                  className="hidden"
-                />
-
-                {!selectedPhoto ? (
-                  <div
-                    onClick={() => fileInputStep1Ref.current?.click()}
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                        validateAndSetPhoto(e.dataTransfer.files[0]);
-                      }
-                    }}
-                    className="border-2 border-dashed border-gray-300 hover:border-blue-500 rounded-2xl p-6 text-center bg-slate-50/70 hover:bg-blue-50/30 transition-all cursor-pointer group"
-                  >
-                    <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-white border border-gray-200 flex items-center justify-center text-gray-400 group-hover:text-blue-600 group-hover:border-blue-200 group-hover:scale-105 transition-all shadow-2xs">
-                      <Camera size={22} />
-                    </div>
-                    <p className="text-xs font-bold text-gray-800 group-hover:text-blue-700">
-                      Upload photo of the challenge
-                    </p>
-                    <p className="text-[11px] text-gray-500 mt-1">
-                      Drag and drop image here, or <span className="text-blue-600 font-semibold underline underline-offset-2">browse file</span>
-                    </p>
-                    <p className="text-[10px] text-gray-400 mt-1.5">
-                      Supports JPG, PNG, WEBP (Max 5 MB)
-                    </p>
-                  </div>
-                ) : (
-                  <div className="border border-gray-200 rounded-2xl p-4 bg-slate-50/70 flex flex-col sm:flex-row items-center gap-4">
-                    {photoPreview && (
-                      <div className="relative w-24 h-24 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0 shadow-xs">
-                        <img
-                          src={photoPreview}
-                          alt="Challenge preview"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0 text-center sm:text-left">
-                      <div className="flex items-center justify-center sm:justify-start gap-1.5">
-                        <ImageIcon size={14} className="text-blue-600 flex-shrink-0" />
-                        <p className="text-xs font-bold text-[#071A33] truncate">{selectedPhoto.name}</p>
-                      </div>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        {(selectedPhoto.size / (1024 * 1024)).toFixed(2)} MB · {selectedPhoto.type || "Image"}
-                      </p>
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 mt-1">
-                        <CheckCircle2 size={12} /> Photo attached successfully
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => fileInputStep1Ref.current?.click()}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors shadow-2xs cursor-pointer"
-                      >
-                        Change
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleRemovePhoto}
-                        className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 border border-rose-200 text-rose-600 hover:bg-rose-100 transition-colors cursor-pointer"
-                      >
-                        <Trash2 size={13} className="inline mr-1" />
-                        Remove
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {photoError && (
-                  <div className="mt-2 text-xs text-rose-600 flex items-center gap-1.5 font-medium">
-                    <AlertTriangle size={14} className="flex-shrink-0" />
-                    <span>{photoError}</span>
-                  </div>
-                )}
               </div>
 
               <div className="flex justify-end pt-4 border-t border-gray-100">
