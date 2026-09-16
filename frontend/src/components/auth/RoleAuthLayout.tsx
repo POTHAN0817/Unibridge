@@ -12,6 +12,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import { UserRole } from "../../types";
+import unibridgeLogo from "../../assets/unbridgelogo.png";
 
 interface RoleAuthLayoutProps {
   role: UserRole;
@@ -156,9 +157,16 @@ export const RoleAuthLayout: React.FC<RoleAuthLayoutProps> = ({
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2 mb-4">
             <img
-              src={`${import.meta.env.BASE_URL}unbridgelogo.png`}
+              src={unibridgeLogo}
               alt="UniBridge"
               className="w-10 h-10 object-contain"
+              onError={(e) => {
+                const target = e.currentTarget;
+                if (!target.dataset.triedFallback) {
+                  target.dataset.triedFallback = "1";
+                  target.src = "/unbridgelogo.png";
+                }
+              }}
             />
             <span
               className="text-2xl font-extrabold text-[#071A33]"
