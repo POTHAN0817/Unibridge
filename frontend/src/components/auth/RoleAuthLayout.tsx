@@ -156,7 +156,7 @@ export const RoleAuthLayout: React.FC<RoleAuthLayoutProps> = ({
         <div className="text-center">
           <Link to="/" className="inline-flex items-center gap-2 mb-4">
             <img
-              src="/unbridgelogo.png"
+              src={`${import.meta.env.BASE_URL}unbridgelogo.png`}
               alt="UniBridge"
               className="w-10 h-10 object-contain"
             />
